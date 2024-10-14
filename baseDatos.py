@@ -92,4 +92,3 @@ conn.commit()
 conn.close()
 
 print("Base de datos creada con éxito")
-print("Pueba")
