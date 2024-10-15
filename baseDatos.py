@@ -1,5 +1,9 @@
 import sqlite3
 
+def conectar():
+    conn = sqlite3.connect('mi_base_de_datos.db')
+    return conn
+
 # Conectar a la base de datos (se creará si no existe)
 conn = sqlite3.connect('mi_base_de_datos.db')
 
@@ -85,6 +89,20 @@ CREATE TABLE IF NOT EXISTS detalle_compra (
 # Ejecutar el script SQL
 cursor.executescript(script_sql)
 
+# Verificar si ya existe un usuario admin
+cursor.execute("SELECT * FROM usuarios WHERE nombre = 'admin'")
+admin_existe = cursor.fetchone()
+
+if not admin_existe:
+    # Insertar un usuario admin si no existe
+    cursor.execute('''
+        INSERT INTO usuarios (nombre, correo, contraseña, rol) 
+        VALUES (?, ?, ?, ?)
+    ''', ('admin', 'admin@farmacia.com', 'admin', 'Admin'))
+    print("Usuario admin creado con éxito.")
+else:
+    print("El usuario admin ya existe.")
+
 # Guardar los cambios
 conn.commit()
 
@@ -92,4 +110,3 @@ conn.commit()
 conn.close()
 
 print("Base de datos creada con éxito")
-print("Pueba")
