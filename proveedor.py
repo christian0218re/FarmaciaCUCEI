@@ -199,7 +199,6 @@ def createProviderWindow():
     phoneEntry.grid(row=5, column=1, padx=10, pady=10)
 
     # Botones para las acciones de los proveedores
-    tk.Button(provider_window, text='', width=20, command=None).grid(row=6, column=1, padx=10, pady=10)
     tk.Button(provider_window, text='Nuevo', width=20, command=getCurrentID).grid(row=6, column=1, padx=10, pady=10)
     tk.Button(provider_window, text='Actualizar', width=20, command=actualizar_proveedor).grid(row=7, column=1, padx=10, pady=10)
     tk.Button(provider_window, text='Guardar', width=20, command=crear_proveedor).grid(row=8, column=1, padx=10, pady=10)
@@ -209,5 +208,3 @@ def createProviderWindow():
 
     provider_window.mainloop()
 
-
-createProviderWindow()

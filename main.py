@@ -3,6 +3,8 @@ import Autenticacion as autenticacion
 from tkinter import messagebox
 from Clientes import createClientWindow
 from proveedor import createProviderWindow
+from Productos import createProductWindow
+from Alamcen import mostrar_inventario
 
 menu = None  # Corrige el nombre de la variable global
 
@@ -16,7 +18,8 @@ def abrir_menu_principal(rol):
 
     if rol == 'Admin':
         tk.Button(menu, text="Provedor", width=20, command=createProviderWindow).pack(pady=5)
-        tk.Button(menu, text="Almacén (Productos)", width=20).pack(pady=5)
+        tk.Button(menu, text="Productos", width=20, command=createProductWindow).pack(pady=5)
+        tk.Button(menu, text="Almacen", width=20, command=mostrar_inventario).pack(pady=5)
         tk.Button(menu, text="Compras", width=20).pack(pady=5)
         tk.Button(menu, text="Ventas", width=20).pack(pady=5)
         tk.Button(menu, text="Clientes", width=20, command=openClientWindow).pack(pady=5)

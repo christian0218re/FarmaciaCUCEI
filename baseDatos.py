@@ -46,15 +46,14 @@ CREATE TABLE IF NOT EXISTS proveedores (
 INSERT OR IGNORE INTO proveedores (proveedorId, nombre, direccion, email, telefono)
 VALUES (0, 'Producto sin proveedor', '', '', '');
 
--- Crear la tabla 'productos'
 CREATE TABLE IF NOT EXISTS productos (
     productoId INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre TEXT NOT NULL,
     descripcion TEXT,
     precio REAL NOT NULL,
     stock INTEGER NOT NULL,
-    proveedorId INTEGER DEFAULT 0,  -- Por defecto, el producto estará asociado al 'Producto sin proveedor'
-    FOREIGN KEY (proveedorId) REFERENCES proveedores(proveedorId) ON DELETE RESTRICT  -- No permitir borrar este proveedor
+    proveedorId INTEGER,  -- Asegúrate de que esta columna exista
+    FOREIGN KEY (proveedorId) REFERENCES proveedores(proveedorId) ON DELETE SET NULL  -- Relación con proveedores
 );
 
 -- Crear la tabla 'ventas'
@@ -125,3 +124,4 @@ conn.commit()
 conn.close()
 
 print("Base de datos creada con éxito")
+
