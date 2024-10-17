@@ -3,7 +3,10 @@ import Autenticacion as autenticacion
 from tkinter import messagebox
 from Clientes import createClientWindow
 
+menu = None  # Corrige el nombre de la variable global
+
 def abrir_menu_principal(rol):
+    global menu
     menu = tk.Tk()
     menu.title("Menú Principal - Farmacia CUCEI")
     menu.geometry("400x300")
@@ -14,17 +17,21 @@ def abrir_menu_principal(rol):
         tk.Button(menu, text="Almacén (Productos)", width=20).pack(pady=5)
         tk.Button(menu, text="Compras", width=20).pack(pady=5)
         tk.Button(menu, text="Ventas", width=20).pack(pady=5)
-        tk.Button(menu, text="Clientes", width=20, command = createClientWindow).pack(pady=5)
+        tk.Button(menu, text="Clientes", width=20, command=openClientWindow).pack(pady=5)
         tk.Button(menu, text="Usuarios", width=20).pack(pady=5)
-        #menu.after(1000, menu.destroy)
     elif rol == 'Gerente':
         tk.Button(menu, text="Ventas", width=20).pack(pady=5)
-        tk.Button(menu, text="Clientes", width=20, command = createClientWindow).pack(pady=5)
-        #menu.after(100, menu.destroy)
+        tk.Button(menu, text="Clientes", width=20, command=createClientWindow).pack(pady=5)
     elif rol == 'Cajero':
         tk.Button(menu, text="Ventas", width=20).pack(pady=5)
 
     menu.mainloop()
+
+def openClientWindow():
+    global menu
+    createClientWindow()
+    
+    #menu.destroy()
 
 def login():
     # Obtenemos los valores ANTES de destruir la ventana
