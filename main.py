@@ -86,6 +86,7 @@ def crud_usuarios():
     tk.Button(window, text="Buscar Usuario", width=20).pack(pady=10)
     tk.Button(window, text="Modificar Usuario", width=20).pack(pady=10)
     tk.Button(window, text="Cancelar Usuario", width=20).pack(pady=10)
+    
 
     window.mainloop()
 
@@ -174,7 +175,7 @@ def crud_clientes():
 
     window.mainloop()
 
-login_window()
+login()
 
 
 
