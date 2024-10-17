@@ -33,13 +33,28 @@ CREATE TABLE IF NOT EXISTS clientes (
     puntos INTEGER DEFAULT 0
 );
 
+-- Crear la tabla 'proveedores'
+CREATE TABLE IF NOT EXISTS proveedores (
+    proveedorId INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT NOT NULL,
+    direccion TEXT,
+    email TEXT,
+    telefono TEXT
+);
+
+-- Insertar el proveedor especial 'Producto sin proveedor' con proveedorId = 0
+INSERT OR IGNORE INTO proveedores (proveedorId, nombre, direccion, email, telefono)
+VALUES (0, 'Producto sin proveedor', '', '', '');
+
 -- Crear la tabla 'productos'
 CREATE TABLE IF NOT EXISTS productos (
     productoId INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre TEXT NOT NULL,
     descripcion TEXT,
     precio REAL NOT NULL,
-    stock INTEGER NOT NULL
+    stock INTEGER NOT NULL,
+    proveedorId INTEGER DEFAULT 0,  -- Por defecto, el producto estará asociado al 'Producto sin proveedor'
+    FOREIGN KEY (proveedorId) REFERENCES proveedores(proveedorId) ON DELETE RESTRICT  -- No permitir borrar este proveedor
 );
 
 -- Crear la tabla 'ventas'
