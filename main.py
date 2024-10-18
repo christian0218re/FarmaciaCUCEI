@@ -2,14 +2,9 @@ import tkinter as tk
 import Autenticacion as autenticacion
 from tkinter import messagebox
 from Clientes import createClientWindow
-from proveedor import createProviderWindow
-from Productos import createProductWindow
-from Alamcen import mostrar_inventario
-
-menu = None  # Corrige el nombre de la variable global
+from Usuarios import createUserWindow
 
 def abrir_menu_principal(rol):
-    global menu
     menu = tk.Tk()
     menu.title("Menú Principal - Farmacia CUCEI")
     menu.geometry("400x300")
@@ -17,26 +12,18 @@ def abrir_menu_principal(rol):
     tk.Label(menu, text=f"Bienvenido, {rol}", font=("Helvetica", 16)).pack(pady=10)
 
     if rol == 'Admin':
-        tk.Button(menu, text="Provedor", width=20, command=createProviderWindow).pack(pady=5)
-        tk.Button(menu, text="Productos", width=20, command=createProductWindow).pack(pady=5)
-        tk.Button(menu, text="Almacen", width=20, command=mostrar_inventario).pack(pady=5)
+        tk.Button(menu, text="Almacén (Productos)", width=20).pack(pady=5)
         tk.Button(menu, text="Compras", width=20).pack(pady=5)
         tk.Button(menu, text="Ventas", width=20).pack(pady=5)
-        tk.Button(menu, text="Clientes", width=20, command=openClientWindow).pack(pady=5)
-        tk.Button(menu, text="Usuarios", width=20).pack(pady=5)
+        tk.Button(menu, text="Clientes", width=20, command = createClientWindow).pack(pady=5)
+        tk.Button(menu, text="Usuarios", width=20, command = createUserWindow).pack(pady=5)
     elif rol == 'Gerente':
         tk.Button(menu, text="Ventas", width=20).pack(pady=5)
-        tk.Button(menu, text="Clientes", width=20, command=createClientWindow).pack(pady=5)
+        tk.Button(menu, text="Clientes", width=20, command = createClientWindow).pack(pady=5)
     elif rol == 'Cajero':
         tk.Button(menu, text="Ventas", width=20).pack(pady=5)
 
     menu.mainloop()
-
-def openClientWindow():
-    global menu
-    createClientWindow()
-    
-    #menu.destroy()
 
 def login():
     # Obtenemos los valores ANTES de destruir la ventana
