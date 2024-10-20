@@ -20,6 +20,7 @@ def createClientWindow():
         correo = correoEntry.get()
         direccion = directionEntry.get()
         telefono = phoneEntry.get()
+        rfc = rfcEntry.get()
         puntos = 0  # Los puntos empiezan en 0
 
         # Expresión regular para validar correos
@@ -41,9 +42,16 @@ def createClientWindow():
             if cursor.fetchone():
                 messagebox.showinfo("Error", "El ID ya está registrado")
                 return
+
             cursor.execute("SELECT * FROM clientes WHERE correo = ?", (correo,))
             if cursor.fetchone():
                 messagebox.showinfo("Error", "El correo ya está registrado")
+                return
+
+            #   Verificar si el RFC no este en uso
+            cursor.execute("SELECT * FROM clientes WHERE rfc = ?", (rfc))
+            if cursor.fetchone():
+                messagebox.showerror('Error', 'El RFC ingresado ya esta registrado')
                 return
 
             # Verificar que el teléfono no esté en uso
@@ -54,9 +62,9 @@ def createClientWindow():
 
             if nombre and correo and direccion and telefono:
                 cursor.execute("""
-                    INSERT INTO clientes (clienteId,nombre, correo, direccion, telefono, puntos)
+                    INSERT INTO clientes (clienteId,nombre, correo, direccion, telefono, puntos, rfc)
                     VALUES (?, ?, ?, ?, ?,?)
-                """, (clientId,nombre, correo, direccion, telefono, puntos))
+                """, (clientId,nombre, correo, direccion, telefono, puntos, rfc))
                 conn.commit()
                 messagebox.showinfo("Éxito", "El cliente ha sido creado correctamente")
                 cleanClientWindows()
@@ -210,6 +218,7 @@ def createClientWindow():
     tk.Label(client_window, text='Correo del cliente').grid(row=3, column=0)
     tk.Label(client_window, text='Dirección del cliente').grid(row=4, column=0)
     tk.Label(client_window, text='Teléfono del cliente').grid(row=5, column=0)
+    tk.Label(client_window, text='RFC').grid(row=6, column=0)
 
     # Entradas para los campos del cliente
     idEntry = tk.Entry(client_window)
@@ -222,13 +231,15 @@ def createClientWindow():
     directionEntry.grid(row=4, column=1)
     phoneEntry = tk.Entry(client_window)
     phoneEntry.grid(row=5, column=1)
+    rfcEntry = tk.Entry(client_window)
+    rfcEntry.grid(row=6, column=1)
 
     # Botones para las acciones de los clientes
-    tk.Button(client_window, text='New', width=20, command=getCurrentID).grid(row=7, column=1)
-    tk.Button(client_window, text='Update', width=20, command=actualizar_cliente).grid(row=8, column=1)
-    tk.Button(client_window, text='Save', width=20, command=crear_cliente).grid(row=9, column=1)
-    tk.Button(client_window, text='Delete', width=20, command=eliminar_cliente).grid(row=10, column=1)
-    tk.Button(client_window, text='Cancel', width=20,command=cleanClientWindows).grid(row=11, column=1)
+    tk.Button(client_window, text='New', width=20, command=getCurrentID).grid(row=8, column=1)
+    tk.Button(client_window, text='Update', width=20, command=actualizar_cliente).grid(row=9, column=1)
+    tk.Button(client_window, text='Save', width=20, command=crear_cliente).grid(row=10, column=1)
+    tk.Button(client_window, text='Delete', width=20, command=eliminar_cliente).grid(row=12, column=1)
+    tk.Button(client_window, text='Cancel', width=20,command=cleanClientWindows).grid(row=13, column=1)
     tk.Button(client_window, text='Salir', width=20, command=client_window.destroy).grid(row=0, column=4)
 
     client_window.mainloop()
