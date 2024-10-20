@@ -3,8 +3,8 @@ import Autenticacion as autenticacion
 from tkinter import messagebox
 from Clientes import createClientWindow
 from Usuarios import createUserWindow
-from proveedor import createProviderWindow
 from Productos import createProductWindow
+from Ventas import createSellWindow
 from Alamcen import mostrar_inventario
 
 def abrir_menu_principal(rol):
@@ -15,18 +15,16 @@ def abrir_menu_principal(rol):
     tk.Label(menu, text=f"Bienvenido, {rol}", font=("Helvetica", 16)).pack(pady=10)
 
     if rol == 'Admin':
-        tk.Button(menu, text="Provedor", width=20, command=createProviderWindow).pack(pady=5)
-        tk.Button(menu, text="Productos", width=20, command=createProductWindow).pack(pady=5)
-        tk.Button(menu, text="Almacen", width=20, command=mostrar_inventario).pack(pady=5)
-        tk.Button(menu, text="Compras", width=20).pack(pady=5)
-        tk.Button(menu, text="Ventas", width=20).pack(pady=5)
+        tk.Button(menu, text="Almacén (Productos)", width=20, command = mostrar_inventario).pack(pady=5)
+        tk.Button(menu, text="Compras", width=20, command = createProductWindow).pack(pady=5)
+        tk.Button(menu, text="Ventas", width=20, command = createSellWindow).pack(pady=5)
         tk.Button(menu, text="Clientes", width=20, command = createClientWindow).pack(pady=5)
         tk.Button(menu, text="Usuarios", width=20, command = createUserWindow).pack(pady=5)
     elif rol == 'Gerente':
-        tk.Button(menu, text="Ventas", width=20).pack(pady=5)
+        tk.Button(menu, text="Ventas", width=20, command = createSellWindow).pack(pady=5)
         tk.Button(menu, text="Clientes", width=20, command = createClientWindow).pack(pady=5)
     elif rol == 'Cajero':
-        tk.Button(menu, text="Ventas", width=20).pack(pady=5)
+        tk.Button(menu, text="Ventas", width=20, command = createSellWindow).pack(pady=5)
 
     menu.mainloop()
 

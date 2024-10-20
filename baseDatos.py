@@ -5,12 +5,12 @@ def conectar():
     return conn
 
 # Conectar a la base de datos (se creará si no existe)
-conn = sqlite3.connect('mi_base_de_datos.db')
+conn = conectar()
 
 # Crear un cursor
 cursor = conn.cursor()
 
-# Script SQL ajustado para SQLite
+# Script SQL ajustado para SQLite (sin duplicaciones y errores corregidos)
 script_sql = '''
 -- Crear la tabla 'usuarios'
 CREATE TABLE IF NOT EXISTS usuarios (
@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS proveedores (
 INSERT OR IGNORE INTO proveedores (proveedorId, nombre, direccion, email, telefono)
 VALUES (0, 'Producto sin proveedor', '', '', '');
 
+-- Crear la tabla 'productos'
 CREATE TABLE IF NOT EXISTS productos (
     productoId INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre TEXT NOT NULL,
@@ -103,6 +104,13 @@ CREATE TABLE IF NOT EXISTS detalle_compra (
 # Ejecutar el script SQL
 cursor.executescript(script_sql)
 
+# Agregar la columna 'rfc' a la tabla 'clientes' si no existe
+try:
+    cursor.execute("ALTER TABLE clientes ADD COLUMN rfc TEXT")
+except sqlite3.OperationalError:
+    # Si la columna ya existe, ignorar el error
+    print("La columna 'rfc' ya existe en la tabla 'clientes'.")
+
 # Verificar si ya existe un usuario admin
 cursor.execute("SELECT * FROM usuarios WHERE nombre = 'admin'")
 admin_existe = cursor.fetchone()
@@ -123,5 +131,4 @@ conn.commit()
 # Cerrar la conexión
 conn.close()
 
-print("Base de datos creada con éxito")
-
+print("Base de datos creada y modificada con éxito")

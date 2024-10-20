@@ -197,7 +197,7 @@ def createProductWindow():
     # Crear la ventana principal para gestionar productos
     product_window = tk.Tk()
     product_window.title("Productos")
-    product_window.geometry("600x500")
+    product_window.geometry("650x590")
 
     # Etiquetas y entradas para buscar productos por ID
     tk.Label(product_window, text='Ingrese el ID').grid(row=0, column=0, padx=10, pady=10)
