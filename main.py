@@ -1,6 +1,7 @@
 import tkinter as tk
 import Autenticacion as autenticacion
 from tkinter import messagebox
+from proveedor import createProviderWindow
 from Clientes import createClientWindow
 from Usuarios import createUserWindow
 from Productos import createProductWindow
@@ -15,7 +16,9 @@ def abrir_menu_principal(rol):
     tk.Label(menu, text=f"Bienvenido, {rol}", font=("Helvetica", 16)).pack(pady=10)
 
     if rol == 'Admin':
-        tk.Button(menu, text="Almacén (Productos)", width=20, command = mostrar_inventario).pack(pady=5)
+        tk.Button(menu, text="Provedor", width=20, command=createProviderWindow).pack(pady=5)
+        tk.Button(menu, text="Productos", width=20, command=createProductWindow).pack(pady=5)
+        tk.Button(menu, text="Almacen", width=20, command=mostrar_inventario).pack(pady=5)
         tk.Button(menu, text="Compras", width=20, command = createProductWindow).pack(pady=5)
         tk.Button(menu, text="Ventas", width=20, command = createSellWindow).pack(pady=5)
         tk.Button(menu, text="Clientes", width=20, command = createClientWindow).pack(pady=5)

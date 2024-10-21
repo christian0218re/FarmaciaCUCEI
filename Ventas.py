@@ -5,7 +5,8 @@ from tkinter import messagebox, ttk
 # Conexión a la base de datos
 
 def createSellWindow():
-    # Variables globales para los cálculos
+    sellWindow = tk.Tk()  # Asegúrate de crear la ventana raíz primero
+    sellWindow.title("Ventas")
     subtotal_var = tk.DoubleVar(value=0.0)
     iva_var = tk.DoubleVar(value=0.0)
     total_var = tk.DoubleVar(value=0.0)
@@ -90,8 +91,6 @@ def createSellWindow():
         # Actualizar stock en la base de datos
         cursor.execute("UPDATE productos SET stock = stock - ? WHERE codigo = ?", (cantidad, codigo))
         conn.commit()
-    sellWindow = tk.Tk()
-    sellWindow.title("Ventas")
 
     #   Search info
     tk.Label(sellWindow, text='Buscar código').grid(row=0, column=0)
@@ -185,3 +184,6 @@ def createSellWindow():
     tk.Button(sellWindow, text="Calcular Cambio", command=calcular_cambio).grid(row=12, column=5, columnspan=2)
 
     sellWindow.mainloop()
+
+
+createSellWindow()
