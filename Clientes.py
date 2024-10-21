@@ -14,8 +14,8 @@ def createClientWindow():
         conn = conectar()
         cursor = conn.cursor()
 
-        # Obtener los valores de los campos de entrada=
-        clientId=idEntry.get()
+        # Obtener los valores de los campos de entrada
+        clientId = idEntry.get()
         nombre = nameEntry.get()
         correo = correoEntry.get()
         direccion = directionEntry.get()
@@ -37,21 +37,22 @@ def createClientWindow():
             return
 
         try:
-            # Verificar que el correo no esté en uso
-            cursor.execute("SELECT * FROM clientes WHERE clienteId = ?", (clientId))
+            # Verificar que el ID no esté en uso
+            cursor.execute("SELECT * FROM clientes WHERE clienteId = ?", (clientId,))
             if cursor.fetchone():
                 messagebox.showinfo("Error", "El ID ya está registrado")
                 return
 
+            # Verificar que el correo no esté en uso
             cursor.execute("SELECT * FROM clientes WHERE correo = ?", (correo,))
             if cursor.fetchone():
                 messagebox.showinfo("Error", "El correo ya está registrado")
                 return
 
-            #   Verificar si el RFC no este en uso
-            cursor.execute("SELECT * FROM clientes WHERE rfc = ?", (rfc))
+            # Verificar que el RFC no esté en uso
+            cursor.execute("SELECT * FROM clientes WHERE rfc = ?", (rfc,))
             if cursor.fetchone():
-                messagebox.showerror('Error', 'El RFC ingresado ya esta registrado')
+                messagebox.showinfo("Error", "El RFC ya está registrado")
                 return
 
             # Verificar que el teléfono no esté en uso
@@ -62,9 +63,9 @@ def createClientWindow():
 
             if nombre and correo and direccion and telefono:
                 cursor.execute("""
-                    INSERT INTO clientes (clienteId,nombre, correo, direccion, telefono, puntos, rfc)
-                    VALUES (?, ?, ?, ?, ?,?)
-                """, (clientId,nombre, correo, direccion, telefono, puntos, rfc))
+                    INSERT INTO clientes (clienteId, nombre, correo, direccion, telefono, puntos, rfc)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (clientId, nombre, correo, direccion, telefono, puntos, rfc))
                 conn.commit()
                 messagebox.showinfo("Éxito", "El cliente ha sido creado correctamente")
                 cleanClientWindows()
@@ -80,11 +81,11 @@ def createClientWindow():
         cursor = conn.cursor()
         buscarCliente=idSearch.get()
         clienteId=idEntry.get()
-        
+
         try:
             cursor.execute("SELECT * FROM clientes WHERE clienteId = ?", (buscarCliente,))
             cliente = cursor.fetchone()
-            
+
             if cliente:
                 # Llenar los campos del formulario con los datos del cliente
                 idEntry.delete(0, tk.END)
@@ -97,6 +98,8 @@ def createClientWindow():
                 directionEntry.insert(0, cliente[3])
                 phoneEntry.delete(0, tk.END)
                 phoneEntry.insert(0, cliente[4])
+                rfcEntry.insert(0, tk.END)
+                phoneEntry.insert(0, cliente[5])
             else:
                 messagebox.showinfo("Error", "Cliente no encontrado")
         except Exception as e:
@@ -112,6 +115,7 @@ def createClientWindow():
         correo = correoEntry.get()
         direccion = directionEntry.get()
         telefono = phoneEntry.get()
+        rfc = rfcEntry.get()
         puntos = 0
 
         # Validar que todos los campos estén llenos
@@ -139,9 +143,9 @@ def createClientWindow():
         try:
             cursor.execute("""
                 UPDATE clientes
-                SET nombre = ?, correo = ?, direccion = ?, telefono = ?, puntos = ?
+                SET nombre = ?, correo = ?, direccion = ?, telefono = ?, puntos = ?, rfc = ?
                 WHERE clienteId = ?
-            """, (nombre, correo, direccion, telefono, puntos, clienteId))
+            """, (nombre, correo, direccion, telefono, puntos, clienteId, rfc))
             conn.commit()
 
             messagebox.showinfo("Éxito", "Cliente actualizado correctamente")
@@ -154,14 +158,14 @@ def createClientWindow():
     def eliminar_cliente():
         conn = conectar()
         cursor = conn.cursor()
-        clientId=idEntry.get()
+        clientId = idEntry.get()
 
         try:
-            cursor.execute("DELETE FROM clientes WHERE clienteId = ?", (clientId))
+            cursor.execute("DELETE FROM clientes WHERE clienteId = ?", (clientId,))
             conn.commit()
 
             messagebox.showinfo("Éxito", "Cliente eliminado correctamente")
-            cleanClientWindows();
+            cleanClientWindows()
         except Exception as e:
             messagebox.showinfo("Error", str(e))
         finally:
@@ -200,6 +204,7 @@ def createClientWindow():
         correoEntry.delete(0, tk.END)
         directionEntry.delete(0, tk.END)
         phoneEntry.delete(0, tk.END)
+        rfcEntry.delete(0, tk.END)
 
     # Crear la ventana principal para gestionar clientes
     client_window = tk.Tk()

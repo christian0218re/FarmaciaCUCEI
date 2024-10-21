@@ -2,18 +2,18 @@ from baseDatos import conectar
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-# Variables globales para los cálculos
-subtotal_var = tk.DoubleVar(value=0.0)
-iva_var = tk.DoubleVar(value=0.0)
-total_var = tk.DoubleVar(value=0.0)
-pago_var = tk.DoubleVar(value=0.0)
-cambio_var = tk.DoubleVar(value=0.0)
-
 # Conexión a la base de datos
-conn, cursor = conectar()
 
 def createSellWindow():
+    # Variables globales para los cálculos
+    subtotal_var = tk.DoubleVar(value=0.0)
+    iva_var = tk.DoubleVar(value=0.0)
+    total_var = tk.DoubleVar(value=0.0)
+    pago_var = tk.DoubleVar(value=0.0)
+    cambio_var = tk.DoubleVar(value=0.0)
     def buscar_producto(codigoID, codeEntry, descEntry, priceEntry, stockEntry):
+        conn = conectar()
+        cursor = conn.cursor()
         codigo = codigoID.get()
         cursor.execute("SELECT codigo, descripcion, precio, stock FROM productos WHERE codigo = ?", (codigo,))
         producto = cursor.fetchone()
@@ -34,6 +34,9 @@ def createSellWindow():
             messagebox.showerror("Error", "Producto no encontrado.")
 
     def buscar_cliente(clientEntry, nameEntry, dirEntry, rfcEntry):
+        conn = conectar()
+        cursor = conn.cursor()
+
         cliente_id = clientEntry.get()
         cursor.execute("SELECT nombre, direccion, rfc FROM clientes WHERE id = ?", (cliente_id,))
         cliente = cursor.fetchone()
@@ -50,6 +53,7 @@ def createSellWindow():
         else:
             messagebox.showerror("Error", "Cliente no encontrado.")
     def agregar_producto(tree, codeEntry, descEntry, priceEntry):
+
         codigo = codeEntry.get()
         descripcion = descEntry.get()
         precio = float(priceEntry.get())
@@ -68,6 +72,9 @@ def createSellWindow():
             actualizar_totales(precio)
 
         def actualizar_totales(precio):
+            conn = conectar()
+            cursor = conn.cursor()
+
             subtotal = subtotal_var.get() + precio
             iva = subtotal * 0.16  # Calculamos el IVA
             total = subtotal + iva

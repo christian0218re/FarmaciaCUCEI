@@ -10,100 +10,10 @@ conn = conectar()
 # Crear un cursor
 cursor = conn.cursor()
 
-# Script SQL ajustado para SQLite (sin duplicaciones y errores corregidos)
+# Script SQL ajustado para SQLite
 script_sql = '''
 -- Crear la tabla 'usuarios'
-CREATE TABLE IF NOT EXISTS usuarios (-- Crear la tabla 'usuarios'
 CREATE TABLE IF NOT EXISTS usuarios (
-    usuarioId INTEGER PRIMARY KEY AUTOINCREMENT,
-    nombre TEXT NOT NULL,
-    correo TEXT NOT NULL,
-    contraseña TEXT NOT NULL,
-    rol TEXT CHECK(rol IN ('Admin', 'Gerente', 'Cajero')) NOT NULL,
-    direccion TEXT,
-    telefono TEXT
-);
-
--- Crear la tabla 'clientes'
-CREATE TABLE IF NOT EXISTS clientes (
-    clienteId INTEGER PRIMARY KEY AUTOINCREMENT,
-    nombre TEXT NOT NULL,
-    correo TEXT,
-    direccion TEXT,
-    telefono TEXT,
-    puntos INTEGER DEFAULT 0
-);
-
--- Agregar una columna 'fecha_registro' a la tabla 'clientes'
-ALTER TABLE clientes
-ADD COLUMN rfc TEXT;
-
--- Crear la tabla 'proveedores'
-CREATE TABLE IF NOT EXISTS proveedores (
-    proveedorId INTEGER PRIMARY KEY AUTOINCREMENT,
-    nombre TEXT NOT NULL,
-    direccion TEXT,
-    email TEXT,
-    telefono TEXT
-);
-
--- Insertar el proveedor especial 'Producto sin proveedor' con proveedorId = 0
-INSERT OR IGNORE INTO proveedores (proveedorId, nombre, direccion, email, telefono)
-VALUES (0, 'Producto sin proveedor', '', '', '');
-
-CREATE TABLE IF NOT EXISTS productos (
-    productoId INTEGER PRIMARY KEY AUTOINCREMENT,
-    nombre TEXT NOT NULL,
-    descripcion TEXT,
-    precio REAL NOT NULL,
-    stock INTEGER NOT NULL,
-    proveedorId INTEGER,  -- Asegúrate de que esta columna exista
-    FOREIGN KEY (proveedorId) REFERENCES proveedores(proveedorId) ON DELETE SET NULL  -- Relación con proveedores
-);
-
--- Crear la tabla 'ventas'
-CREATE TABLE IF NOT EXISTS ventas (
-    ventaId INTEGER PRIMARY KEY AUTOINCREMENT,
-    clienteId INTEGER,
-    usuarioId INTEGER,
-    fecha TEXT NOT NULL,
-    total REAL NOT NULL,
-    descuento REAL,
-    FOREIGN KEY (clienteId) REFERENCES clientes(clienteId),
-    FOREIGN KEY (usuarioId) REFERENCES usuarios(usuarioId)
-);
-
--- Crear la tabla 'detalle_venta'
-CREATE TABLE IF NOT EXISTS detalle_venta (
-    detalleId INTEGER PRIMARY KEY AUTOINCREMENT,
-    ventaId INTEGER,
-    productoId INTEGER,
-    cantidad INTEGER NOT NULL,
-    subtotal REAL NOT NULL,
-    FOREIGN KEY (ventaId) REFERENCES ventas(ventaId) ON DELETE CASCADE,
-    FOREIGN KEY (productoId) REFERENCES productos(productoId)
-);
-
--- Crear la tabla 'compras'
-CREATE TABLE IF NOT EXISTS compras (
-    compraId INTEGER PRIMARY KEY AUTOINCREMENT,
-    usuarioId INTEGER,
-    fecha TEXT NOT NULL,
-    total REAL NOT NULL,
-    FOREIGN KEY (usuarioId) REFERENCES usuarios(usuarioId)
-);
-
--- Crear la tabla 'detalle_compra'
-CREATE TABLE IF NOT EXISTS detalle_compra (
-    detalleId INTEGER PRIMARY KEY AUTOINCREMENT,
-    compraId INTEGER,
-    productoId INTEGER,
-    cantidad INTEGER NOT NULL,
-    subtotal REAL NOT NULL,
-    FOREIGN KEY (compraId) REFERENCES compras(compraId) ON DELETE CASCADE,
-    FOREIGN KEY (productoId) REFERENCES productos(productoId)
-);  
-
     usuarioId INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre TEXT NOT NULL,
     correo TEXT NOT NULL,
@@ -143,8 +53,8 @@ CREATE TABLE IF NOT EXISTS productos (
     descripcion TEXT,
     precio REAL NOT NULL,
     stock INTEGER NOT NULL,
-    proveedorId INTEGER,  -- Asegúrate de que esta columna exista
-    FOREIGN KEY (proveedorId) REFERENCES proveedores(proveedorId) ON DELETE SET NULL  -- Relación con proveedores
+    proveedorId INTEGER,
+    FOREIGN KEY (proveedorId) REFERENCES proveedores(proveedorId) ON DELETE SET NULL
 );
 
 -- Crear la tabla 'ventas'
@@ -188,18 +98,11 @@ CREATE TABLE IF NOT EXISTS detalle_compra (
     subtotal REAL NOT NULL,
     FOREIGN KEY (compraId) REFERENCES compras(compraId) ON DELETE CASCADE,
     FOREIGN KEY (productoId) REFERENCES productos(productoId)
-);    
+);
 '''
 
 # Ejecutar el script SQL
 cursor.executescript(script_sql)
-
-# Agregar la columna 'rfc' a la tabla 'clientes' si no existe
-try:
-    cursor.execute("ALTER TABLE clientes ADD COLUMN rfc TEXT")
-except sqlite3.OperationalError:
-    # Si la columna ya existe, ignorar el error
-    print("La columna 'rfc' ya existe en la tabla 'clientes'.")
 
 # Verificar si ya existe un usuario admin
 cursor.execute("SELECT * FROM usuarios WHERE nombre = 'admin'")
