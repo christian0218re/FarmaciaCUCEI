@@ -40,7 +40,7 @@ def createSellWindow():
         # Verificar si el producto ya está en la tabla
         for item in tree.get_children():
             item_values = tree.item(item, 'values')
-            if item_values[0] == codigo:
+            if item_values[0] == productoId:
                 # Si existe, actualizar la cantidad y el importe
                 nueva_cantidad = int(item_values[3]) + cantidad
                 nuevo_importe = nueva_cantidad * precioProducto
@@ -188,12 +188,34 @@ def createSellWindow():
     tk.Entry(totales_frame, textvariable=total_var, state='readonly').grid(row=2, column=1)
     tk.Entry(totales_frame, textvariable=pago_var).grid(row=3, column=1)
     tk.Entry(totales_frame, textvariable=cambio_var, state='readonly').grid(row=4, column=1)
+    def calcularCambio():
+        # Obtén los valores de total y pago
+        total = total_var.get()
+        pago = pago_var.get()
+        
+        # Asegúrate de convertir los valores a tipo float o int si es necesario
+        try:
+            total = float(total)
+            pago = float(pago)
+        except ValueError:
+            messagebox.showerror("Error", "Total o pago no son válidos")
+            return
 
-    tk.Button(totales_frame, text='Calcular cambio', command=None).grid(row=3, column=2)
+        # Verifica si el pago es suficiente
+        if pago >= total:
+            cambio = pago - total
+            cambio_var.set(cambio)
 
+            # Crear un frame para la factura
+            facturaFrame = tk.Frame(sellWindow)
+            facturaFrame.grid(row=3, column=0, columnspan=2, padx=15, pady=15)
+            
+            # Botón para calcular el cambio
+            tk.Button(facturaFrame, text='Ticket', command=None).grid(row=7, column=0)
+        else:
+            messagebox.showerror("Error", "Pago no es suficiente")
 
-
-
+    tk.Button(totales_frame, text='Calcular cambio', command=calcularCambio).grid(row=3, column=2)
     def actualizar_totales(precio):
         subtotal = subtotal_var.get() + precio
         iva = subtotal * 0.16
@@ -218,4 +240,5 @@ def createSellWindow():
             messagebox.showerror("Error", "Introduce un pago válido.")
 
     sellWindow.mainloop()
+
 createSellWindow()
