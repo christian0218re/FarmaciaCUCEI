@@ -1,6 +1,7 @@
 from baseDatos import conectar
 import tkinter as tk
 from tkinter import messagebox, ttk
+from fpdf import FPDF
 
 cliente_id_global = None  # Variable global para almacenar el ID del cliente seleccionado
 
@@ -188,6 +189,7 @@ def createSellWindow():
     tk.Entry(totales_frame, textvariable=total_var, state='readonly').grid(row=2, column=1)
     tk.Entry(totales_frame, textvariable=pago_var).grid(row=3, column=1)
     tk.Entry(totales_frame, textvariable=cambio_var, state='readonly').grid(row=4, column=1)
+    
     def calcularCambio():
         # Obtén los valores de total y pago
         total = total_var.get()
@@ -211,11 +213,82 @@ def createSellWindow():
             facturaFrame.grid(row=3, column=0, columnspan=2, padx=15, pady=15)
             
             # Botón para calcular el cambio
-            tk.Button(facturaFrame, text='Ticket', command=None).grid(row=7, column=0)
+            tk.Button(facturaFrame, text='Ticket', command=ticket).grid(row=7, column=0)
         else:
             messagebox.showerror("Error", "Pago no es suficiente")
 
     tk.Button(totales_frame, text='Calcular cambio', command=calcularCambio).grid(row=3, column=2)
+
+
+    
+
+    def ticket():
+        pdf = FPDF()
+        pdf.add_page()
+
+        # Encabezado del ticket
+        pdf.set_font("Arial", 'B', 16)
+        pdf.cell(200, 10, txt="Ticket de Compra", ln=True, align="C")
+
+        pdf.set_font("Arial", size=12)
+        pdf.cell(200, 10, txt=f"Cliente ID: {cliente_id_global}", ln=True)
+
+        # Agregar productos de la tabla
+        pdf.ln(10)
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(40, 10, "Código", 1)
+        pdf.cell(60, 10, "Descripción", 1)
+        pdf.cell(30, 10, "Precio", 1)
+        pdf.cell(30, 10, "Cantidad", 1)
+        pdf.cell(30, 10, "Importe", 1)
+        pdf.ln()
+
+        pdf.set_font("Arial", size=12)
+
+        for item in tree.get_children():
+            item_values = tree.item(item, 'values')
+            # Asegurarse de que item_values[2] (precio) y item_values[4] (importe) sean números
+            try:
+                precio = float(item_values[2])
+                importe = float(item_values[4])
+            except ValueError:
+                precio = 0.0  # Valor predeterminado si no es un número válido
+                importe = 0.0
+
+            pdf.cell(40, 10, str(item_values[0]), 1)
+            pdf.cell(60, 10, str(item_values[1]), 1)
+            pdf.cell(30, 10, f"${precio:.2f}", 1)
+            pdf.cell(30, 10, str(item_values[3]), 1)  # Cantidad
+            pdf.cell(30, 10, f"${importe:.2f}", 1)
+            pdf.ln()
+
+        # Totales
+        pdf.ln(10)
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(130, 10, "Subtotal:", 1)
+        pdf.cell(30, 10, f"${subtotal_var.get():.2f}", 1, ln=True)
+        
+        pdf.cell(130, 10, "IVA (16%):", 1)
+        pdf.cell(30, 10, f"${iva_var.get():.2f}", 1, ln=True)
+        
+        pdf.cell(130, 10, "Total:", 1)
+        pdf.cell(30, 10, f"${total_var.get():.2f}", 1, ln=True)
+        
+        pdf.cell(130, 10, "Pago:", 1)
+        pdf.cell(30, 10, f"${pago_var.get():.2f}", 1, ln=True)
+        
+        pdf.cell(130, 10, "Cambio:", 1)
+        pdf.cell(30, 10, f"${cambio_var.get():.2f}", 1, ln=True)
+
+        # Guardar el PDF
+        pdf_output = "ticket_compra.pdf"
+        pdf.output(pdf_output)
+
+        messagebox.showinfo("Ticket generado", f"El ticket ha sido generado y guardado como {pdf_output}")
+
+            
+        
+
     def actualizar_totales(precio):
         subtotal = subtotal_var.get() + precio
         iva = subtotal * 0.16
