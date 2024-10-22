@@ -113,3 +113,4 @@ def mostrar_inventario():
 
     inventario_window.mainloop()
 
+mostrar_inventario()

@@ -3,6 +3,8 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from fpdf import FPDF
 
+
+tiketgenerado = False;
 cliente_id_global = None  # Variable global para almacenar el ID del cliente seleccionado
 
 def createSellWindow():
@@ -20,39 +22,54 @@ def createSellWindow():
         conn = conectar()
         cursor = conn.cursor()
         productoId = producto_dict[productolist]
-        cantidad=1
-        print ("Esta es la id del producto",productoId)
+        cantidad_a_agregar = 1  # Siempre agregamos de uno en uno
 
+        # Obtener los datos del producto
         cursor.execute("SELECT * FROM productos WHERE productoId = ?", (productoId,))
         producto = cursor.fetchone()
 
+        if producto and cliente_id_global!=None:
+            productoId = producto[0]
+            nombreProducto = producto[1]
+            descripcionProducto = producto[2]
+            precioProducto = producto[3]
+            stockProducto = producto[4]  # Stock disponible en la base de datos
 
-        productoId=producto[0]
-        nombreProducto=producto[1]
-        descripcionProducto=producto[2]
-        precioProducto=producto[3]
-        stockProducto=producto[4]
+            # Verificar si el producto ya está en la tabla (carrito)
+            for item in tree.get_children():
+                item_values = tree.item(item, 'values')
+                if item_values[0] == str(productoId):  # Comparar con el ID del producto
+                    cantidad_actual = int(item_values[3])  # Cantidad actual en el carrito
+                    nueva_cantidad = cantidad_actual + cantidad_a_agregar  # Nueva cantidad total
 
-        print(productoId,nombreProducto,descripcionProducto,precioProducto,stockProducto)
-        '''if cantidad > stock:
-            messagebox.showerror("Error", "No hay suficiente stock.")
-            return'''
+                    # Verificar si hay suficiente stock para la nueva cantidad
+                    if nueva_cantidad > stockProducto:
+                        messagebox.showerror("Error de stock", f"No hay suficiente stock para {nombreProducto}. Stock disponible: {stockProducto}.")
+                        return  # No permitir agregar el producto si excede el stock
 
-        # Verificar si el producto ya está en la tabla
-        for item in tree.get_children():
-            item_values = tree.item(item, 'values')
-            if item_values[0] == productoId:
-                # Si existe, actualizar la cantidad y el importe
-                nueva_cantidad = int(item_values[3]) + cantidad
-                nuevo_importe = nueva_cantidad * precioProducto
-                tree.item(item, values=(productoId, descripcionProducto, precioProducto, nueva_cantidad, nuevo_importe))
-                break
+                    # Actualizar cantidad e importe en el carrito
+                    nuevo_importe = nueva_cantidad * precioProducto  # Recalcular importe
+                    tree.item(item, values=(productoId, descripcionProducto, precioProducto, nueva_cantidad, nuevo_importe))
+                    actualizar_totales()  # Actualizar totales
+                    return  # Salir de la función ya que se ha actualizado el producto en el carrito
+
+            # Si no está en el carrito, verificar si hay suficiente stock para agregar
+            if cantidad_a_agregar > stockProducto:
+                messagebox.showerror("Error de stock", f"No hay suficiente stock para {nombreProducto}. Stock disponible: {stockProducto}.")
+                return  # No permitir agregar el producto si excede el stock
+
+            # Si no existe, agregar un nuevo registro al carrito
+            importe = cantidad_a_agregar * precioProducto  # Calcula el importe basado en la cantidad inicial
+            tree.insert("", "end", values=(productoId, descripcionProducto, precioProducto, cantidad_a_agregar, importe))
+            actualizar_totales()  # Actualizar totales
+
         else:
-            # Si no existe, agregar un nuevo registro
-            importe = cantidad * precioProducto
-            tree.insert("", "end", values=(productoId, descripcionProducto, precioProducto, cantidad, importe))
+             messagebox.showerror("Error", "Necesita un cliente")
+             if producto == False:
+                messagebox.showerror("Error", "Producto no encontrado en la base de datos.")
 
-        actualizar_totales(precioProducto * cantidad)
+        conn.close()
+
 
 
     # Función para buscar Producto
@@ -133,6 +150,31 @@ def createSellWindow():
 
         return {f"{producto[1]} (ID: {producto[0]})": producto[0] for producto in productos}
 
+
+    def eliminar_producto():
+        # Obtener la selección actual
+        selected_item = tree.selection()
+        if selected_item:
+            # Eliminar el elemento del Treeview
+            tree.delete(selected_item)
+            # Actualizar los totales después de eliminar
+            actualizar_totales()
+        else:
+            messagebox.showwarning("Advertencia", "No hay ningún producto seleccionado.")
+
+    
+    def cancelar_ticket():
+        if(tiketgenerado):
+            # Revertir el stock de productos
+            revertir_stock()
+
+            # Limpiar la tabla de productos (opcional)
+            for item in tree.get_children():
+                tree.delete(item)
+
+            messagebox.showinfo("Cancelación", "El ticket ha sido cancelado y el stock revertido.")   
+        else: 
+            messagebox.showinfo("Error", "No hay ticket generado")  
     # Obtener lista de clientes para el Combobox
     clientes_dict = obtener_clientes()
     producto_dict = obtenerProducto()
@@ -165,6 +207,8 @@ def createSellWindow():
     listbox.grid(row=1, column=0, columnspan=2, padx=5, pady=5)
     listbox.bind("<Double-Button-1>", seleccionar_cliente)  # Seleccionar cliente al hacer doble clic
 
+    
+
     # Tabla de productos agregados
     tree = ttk.Treeview(sellWindow, columns=("codigo", "descripcion", "precio", "cantidad", "importe"), show='headings')
     tree.heading("codigo", text="Código")
@@ -178,6 +222,9 @@ def createSellWindow():
     totales_frame = tk.Frame(sellWindow)
     totales_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=10)
 
+    #Eliminar 
+    tk.Button(sellWindow, text="Eliminar Producto", command=eliminar_producto).grid(row=2, column=0, padx=0, pady=0, sticky='w')
+    tk.Button(sellWindow, text="Cancelar Ticket", command=cancelar_ticket).grid(row=2, column=1, padx=80, pady=80, sticky='e')
     tk.Label(totales_frame, text='Subtotal:').grid(row=0, column=0, sticky='e')
     tk.Label(totales_frame, text='IVA (16%):').grid(row=1, column=0, sticky='e')
     tk.Label(totales_frame, text='Total:').grid(row=2, column=0, sticky='e')
@@ -189,40 +236,67 @@ def createSellWindow():
     tk.Entry(totales_frame, textvariable=total_var, state='readonly').grid(row=2, column=1)
     tk.Entry(totales_frame, textvariable=pago_var).grid(row=3, column=1)
     tk.Entry(totales_frame, textvariable=cambio_var, state='readonly').grid(row=4, column=1)
+
+    # Crear el botón para cancelar el ticket (inicialmente oculto)
     
     def calcularCambio():
-        # Obtén los valores de total y pago
-        total = total_var.get()
-        pago = pago_var.get()
-        
-        # Asegúrate de convertir los valores a tipo float o int si es necesario
-        try:
-            total = float(total)
-            pago = float(pago)
-        except ValueError:
-            messagebox.showerror("Error", "Total o pago no son válidos")
-            return
-
-        # Verifica si el pago es suficiente
-        if pago >= total:
-            cambio = pago - total
-            cambio_var.set(cambio)
-
-            # Crear un frame para la factura
-            facturaFrame = tk.Frame(sellWindow)
-            facturaFrame.grid(row=3, column=0, columnspan=2, padx=15, pady=15)
+        global cliente_id_global
+        if(cliente_id_global!=None):
+            # Obtén los valores de total y pago
+            total = total_var.get()
+            pago = pago_var.get()
             
-            # Botón para calcular el cambio
-            tk.Button(facturaFrame, text='Ticket', command=ticket).grid(row=7, column=0)
+            # Asegúrate de convertir los valores a tipo float o int si es necesario
+            try:
+                total = float(total)
+                pago = float(pago)
+            except ValueError:
+                messagebox.showerror("Error", "Total o pago no son válidos")
+                return
+
+            # Verifica si el pago es suficiente
+            if pago >= total:
+                cambio = pago - total
+                cambio_var.set(cambio)
+
+                # Crear un frame para la factura
+                facturaFrame = tk.Frame(sellWindow)
+                facturaFrame.grid(row=3, column=0, columnspan=2, padx=15, pady=15)
+                
+                # Botón para calcular el cambio
+                tk.Button(facturaFrame, text='Ticket', command=ticket).grid(row=7, column=0)
+            else:
+                messagebox.showerror("Error", "Pago no es suficiente")
         else:
-            messagebox.showerror("Error", "Pago no es suficiente")
+            messagebox.showerror("Error", "No es cliente valido")
 
     tk.Button(totales_frame, text='Calcular cambio', command=calcularCambio).grid(row=3, column=2)
 
 
-    
+    def actualizar_stock():
+        # Conectar a la base de datos
+        conn = conectar()
+        cursor = conn.cursor()
+
+        # Recorre cada producto en el ticket
+        for item in tree.get_children():
+            item_values = tree.item(item, 'values')
+            producto_id = item_values[0]  # Suponiendo que el código del producto es el primer valor
+            cantidad_comprada = int(item_values[3])  # La cantidad está en la cuarta posición
+
+            # Actualizar el stock en la base de datos
+            cursor.execute("""
+                UPDATE productos
+                SET stock = stock - ?
+                WHERE productoId = ?;
+            """, (cantidad_comprada, producto_id))
+
+        # Confirmar los cambios y cerrar la conexión
+        conn.commit()
+        conn.close()
 
     def ticket():
+        global tiketgenerado
         pdf = FPDF()
         pdf.add_page()
 
@@ -285,18 +359,57 @@ def createSellWindow():
         pdf.output(pdf_output)
 
         messagebox.showinfo("Ticket generado", f"El ticket ha sido generado y guardado como {pdf_output}")
+        actualizar_stock()
+        tiketgenerado=True
 
-            
-        
+    def revertir_stock():
+        # Conectar a la base de datos
+        conn = conectar()
+        cursor = conn.cursor()
 
-    def actualizar_totales(precio):
-        subtotal = subtotal_var.get() + precio
+        # Recorre cada producto en el ticket
+        for item in tree.get_children():
+            item_values = tree.item(item, 'values')
+            producto_id = item_values[0]  # Suponiendo que el código del producto es el primer valor
+            cantidad_comprada = int(item_values[3])  # La cantidad está en la cuarta posición
+
+            # Revertir el stock en la base de datos
+            cursor.execute("""
+                UPDATE productos
+                SET stock = stock + ?
+                WHERE productoId = ?;
+            """, (cantidad_comprada, producto_id))
+
+        # Confirmar los cambios y cerrar la conexión
+        conn.commit()
+        conn.close()
+        messagebox.showinfo("Stock revertido", "El stock ha sido revertido correctamente.")    
+        subtotal_var.set(0.0)  # Usa 0.0 para variables de tipo DoubleVar
+        iva_var.set(0.0)
+        total_var.set(0.0)
+        pago_var.set(0.0)
+        cambio_var.set(0.0)
+
+    def actualizar_totales():
+        subtotal = 0
+
+        # Sumar el importe de todos los productos en el carrito (treeview)
+        for item in tree.get_children():
+            item_values = tree.item(item, 'values')
+            importe = float(item_values[4])  # El importe está en la posición 4 (última columna)
+            subtotal += importe
+
+        # Calcular IVA (16%)
         iva = subtotal * 0.16
+
+        # Calcular el total (subtotal + IVA)
         total = subtotal + iva
 
+        # Actualizar las variables asociadas a los labels o widgets
         subtotal_var.set(subtotal)
         iva_var.set(iva)
         total_var.set(total)
+
 
     def calcular_cambio():
         try:
