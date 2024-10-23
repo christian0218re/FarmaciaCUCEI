@@ -2,13 +2,10 @@
 from baseDatos import conectar
 import tkinter as tk
 from tkinter import messagebox
-import re 
+import re
 
 
 def createClientWindow():
-
-    
-
     # Función para crear un nuevo cliente
     def crear_cliente(nombre=None, correo=None, direccion=None, telefono=None, puntos=0):
         conn = conectar()
@@ -79,8 +76,8 @@ def createClientWindow():
     def buscar_cliente():
         conn = conectar()
         cursor = conn.cursor()
-        buscarCliente=idSearch.get()
-        clienteId=idEntry.get()
+        buscarCliente = idSearch.get()
+        clienteId = idEntry.get()
 
         try:
             cursor.execute("SELECT * FROM clientes WHERE clienteId = ?", (buscarCliente,))
@@ -89,17 +86,23 @@ def createClientWindow():
             if cliente:
                 # Llenar los campos del formulario con los datos del cliente
                 idEntry.delete(0, tk.END)
-                idEntry.insert(0, cliente[0])
+                idEntry.insert(0, cliente[1])
+
                 nameEntry.delete(0, tk.END)
-                nameEntry.insert(0, cliente[1])
+                nameEntry.insert(0, cliente[2])
+
                 correoEntry.delete(0, tk.END)
-                correoEntry.insert(0, cliente[2])
+                correoEntry.insert(0, cliente[3])
+
                 directionEntry.delete(0, tk.END)
-                directionEntry.insert(0, cliente[3])
+                directionEntry.insert(0, cliente[4])
+
                 phoneEntry.delete(0, tk.END)
-                phoneEntry.insert(0, cliente[4])
-                rfcEntry.insert(0, tk.END)
                 phoneEntry.insert(0, cliente[5])
+
+                rfcEntry.delete(0, tk.END)
+                rfcEntry.insert(0, cliente[6])
+
             else:
                 messagebox.showinfo("Error", "Cliente no encontrado")
         except Exception as e:
@@ -215,7 +218,7 @@ def createClientWindow():
     tk.Label(client_window, text='Ingrese el ID').grid(row=0, column=0)
     idSearch = tk.Entry(client_window)
     idSearch.grid(row=0, column=1)
-    tk.Button(client_window, text='Search',command=buscar_cliente).grid(row=0, column=3)
+    tk.Button(client_window, text='Search', command=buscar_cliente).grid(row=0, column=3)
 
     # Etiquetas para los campos del cliente
     tk.Label(client_window, text='ID cliente').grid(row=1, column=0)
@@ -244,7 +247,7 @@ def createClientWindow():
     tk.Button(client_window, text='Update', width=20, command=actualizar_cliente).grid(row=9, column=1)
     tk.Button(client_window, text='Save', width=20, command=crear_cliente).grid(row=10, column=1)
     tk.Button(client_window, text='Delete', width=20, command=eliminar_cliente).grid(row=12, column=1)
-    tk.Button(client_window, text='Cancel', width=20,command=cleanClientWindows).grid(row=13, column=1)
+    tk.Button(client_window, text='Cancel', width=20, command=cleanClientWindows).grid(row=13, column=1)
     tk.Button(client_window, text='Salir', width=20, command=client_window.destroy).grid(row=0, column=4)
 
     client_window.mainloop()
