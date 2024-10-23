@@ -14,6 +14,7 @@ def createSellWindow():
     # Variables para totales
     subtotal_var = tk.DoubleVar(value=0.0)
     iva_var = tk.DoubleVar(value=0.0)
+    descuento_var = tk.DoubleVar(value=0.0)
     total_var = tk.DoubleVar(value=0.0)
     pago_var = tk.DoubleVar(value=0.0)
     cambio_var = tk.DoubleVar(value=0.0)
@@ -163,6 +164,19 @@ def createSellWindow():
             messagebox.showwarning("Advertencia", "No hay ningún producto seleccionado.")
 
     
+    def nuevaVenta():
+
+        for item in tree.get_children():
+            tree.delete(item)
+
+        
+        subtotal_var.set(0.0)  
+        descuento_var.set(0.0)  
+        iva_var.set(0.0)
+        total_var.set(0.0)
+        pago_var.set(0.0)
+        cambio_var.set(0.0)
+
     def cancelar_ticket():
         if(tiketgenerado):
             # Revertir el stock de productos
@@ -227,18 +241,26 @@ def createSellWindow():
     tk.Button(sellWindow, text="Cancelar Ticket", command=cancelar_ticket).grid(row=2, column=1, padx=80, pady=80, sticky='e')
     tk.Label(totales_frame, text='Subtotal:').grid(row=0, column=0, sticky='e')
     tk.Label(totales_frame, text='IVA (16%):').grid(row=1, column=0, sticky='e')
-    tk.Label(totales_frame, text='Total:').grid(row=2, column=0, sticky='e')
-    tk.Label(totales_frame, text='Pago:').grid(row=3, column=0, sticky='e')
-    tk.Label(totales_frame, text='Cambio:').grid(row=4, column=0, sticky='e')
+    tk.Label(totales_frame, text='Descuento:').grid(row=2, column=0, sticky='e')
+    tk.Label(totales_frame, text='Total:').grid(row=3, column=0, sticky='e')
+    tk.Label(totales_frame, text='Pago:').grid(row=4, column=0, sticky='e')
+    tk.Label(totales_frame, text='Cambio:').grid(row=5, column=0, sticky='e')
 
     tk.Entry(totales_frame, textvariable=subtotal_var, state='readonly').grid(row=0, column=1)
     tk.Entry(totales_frame, textvariable=iva_var, state='readonly').grid(row=1, column=1)
-    tk.Entry(totales_frame, textvariable=total_var, state='readonly').grid(row=2, column=1)
-    tk.Entry(totales_frame, textvariable=pago_var).grid(row=3, column=1)
-    tk.Entry(totales_frame, textvariable=cambio_var, state='readonly').grid(row=4, column=1)
+    tk.Entry(totales_frame, textvariable=descuento_var, state='readonly').grid(row=2, column=1)
+    tk.Entry(totales_frame, textvariable=total_var, state='readonly').grid(row=3, column=1)
+    tk.Entry(totales_frame, textvariable=pago_var).grid(row=4, column=1)
+    tk.Entry(totales_frame, textvariable=cambio_var, state='readonly').grid(row=5, column=1)
+
+    # Crear un frame para la NuevoFrame
+    NuevoFrame = tk.Frame(sellWindow)
+    NuevoFrame.grid(row=3, column=0, columnspan=2, padx=15, pady=15, sticky='w')
+                
+    # Botón para calcular el cambio
+    tk.Button(NuevoFrame, text='Nuevo', command=nuevaVenta).grid(row=5, column=0, sticky='w')
 
     # Crear el botón para cancelar el ticket (inicialmente oculto)
-    
     def calcularCambio():
         global cliente_id_global
         if(cliente_id_global!=None):
@@ -344,6 +366,9 @@ def createSellWindow():
         
         pdf.cell(130, 10, "IVA (16%):", 1)
         pdf.cell(30, 10, f"${iva_var.get():.2f}", 1, ln=True)
+
+        pdf.cell(130, 10, "Descuento:", 1)
+        pdf.cell(30, 10, f"${descuento_var.get():.2f}", 1, ln=True)
         
         pdf.cell(130, 10, "Total:", 1)
         pdf.cell(30, 10, f"${total_var.get():.2f}", 1, ln=True)
@@ -357,8 +382,15 @@ def createSellWindow():
         # Guardar el PDF
         pdf_output = "ticket_compra.pdf"
         pdf.output(pdf_output)
-
+        cursor.execute("SELECT puntos FROM clientes WHERE clienteId = ?", (cliente_id_global,))
+        puntos_cliente = cursor.fetchone()[0]
         messagebox.showinfo("Ticket generado", f"El ticket ha sido generado y guardado como {pdf_output}")
+        # Actualizar puntos del cliente
+        subtotal=subtotal_var.get()
+        subtotal+=puntos_cliente
+        nuevos_puntos = int(subtotal // 100)  # Supongamos que se ganan 1 punto por cada $10 de compra
+        cursor.execute("UPDATE clientes SET puntos = puntos + ? WHERE clienteId = ?", (nuevos_puntos, cliente_id_global))
+        conn.commit()
         actualizar_stock()
         tiketgenerado=True
 
@@ -381,18 +413,32 @@ def createSellWindow():
             """, (cantidad_comprada, producto_id))
 
         # Confirmar los cambios y cerrar la conexión
+
+        cursor.execute("SELECT puntos FROM clientes WHERE clienteId = ?", (cliente_id_global,))
+        puntos_cliente = cursor.fetchone()[0]
+        messagebox.showinfo("Ticket generado", f"El ticket ha sido generado y guardado como {pdf_output}")
+        # Actualizar puntos del cliente
+        subtotal=subtotal_var.get()
+        puntos_cliente-=puntos_cliente
+        nuevos_puntos = int(subtotal // 100)  # Supongamos que se ganan 1 punto por cada $100 de compra
+        cursor.execute("UPDATE clientes SET puntos = puntos + ? WHERE clienteId = ?", (puntos_cliente, cliente_id_global))
+
         conn.commit()
         conn.close()
         messagebox.showinfo("Stock revertido", "El stock ha sido revertido correctamente.")    
-        subtotal_var.set(0.0)  # Usa 0.0 para variables de tipo DoubleVar
+        subtotal_var.set(0.0)  
+        descuento_var.set(0.0)  
         iva_var.set(0.0)
         total_var.set(0.0)
         pago_var.set(0.0)
         cambio_var.set(0.0)
 
     def actualizar_totales():
+        # Conectar a la base de datos
+        conn = conectar()
+        cursor = conn.cursor()
         subtotal = 0
-
+        global cliente_id_global
         # Sumar el importe de todos los productos en el carrito (treeview)
         for item in tree.get_children():
             item_values = tree.item(item, 'values')
@@ -402,14 +448,32 @@ def createSellWindow():
         # Calcular IVA (16%)
         iva = subtotal * 0.16
 
-        # Calcular el total (subtotal + IVA)
-        total = subtotal + iva
+        # Obtener puntos del cliente actual
+        cursor.execute("SELECT puntos FROM clientes WHERE clienteId = ?", (cliente_id_global,))
+        puntos_cliente = cursor.fetchone()[0]
+        print(puntos_cliente," los puntos del cliente fuera")
+        # Calcular descuento
+        descuento = 0
+        if subtotal > 500.00:
+            descuento = subtotal * 0.10  # 10% de descuento
+
+        if puntos_cliente >= 50:
+            print(puntos_cliente," los puntos del cliente")
+            descuento = subtotal * 0.50  # 50% de descuento
+
+        # Calcular el total (subtotal + IVA - descuento)
+        total = subtotal + iva - descuento
+
+        '''# Actualizar puntos del cliente
+        nuevos_puntos = int(subtotal // 10)  # Supongamos que se ganan 1 punto por cada $10 de compra
+        cursor.execute("UPDATE clientes SET puntos = puntos + ? WHERE clienteId = ?", (nuevos_puntos, cliente_id_global))
+        conn.commit()'''
 
         # Actualizar las variables asociadas a los labels o widgets
         subtotal_var.set(subtotal)
         iva_var.set(iva)
+        descuento_var.set(descuento)  # Asegúrate de que esta variable esté definida
         total_var.set(total)
-
 
     def calcular_cambio():
         try:
