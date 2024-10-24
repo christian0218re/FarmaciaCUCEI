@@ -247,3 +247,4 @@ def createBuyWindow():
     tk.Label(buyWindow, textvariable=total_var).grid(row=5, column=1, padx=10, pady=5, sticky='w')
 
     buyWindow.mainloop()
+

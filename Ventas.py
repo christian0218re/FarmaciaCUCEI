@@ -2,12 +2,13 @@ from baseDatos import conectar
 import tkinter as tk
 from tkinter import messagebox, ttk
 from fpdf import FPDF
-
-
+from datetime import datetime
+import Autenticacion as autenticacion
 tiketgenerado = False;
+detalle_tree = None
 cliente_id_global = None  # Variable global para almacenar el ID del cliente seleccionado
-
-def createSellWindow():
+ticketGlobal = None
+def createSellWindow(userId):
     sellWindow = tk.Tk()
     sellWindow.title("Ventas")
     
@@ -165,7 +166,10 @@ def createSellWindow():
 
     
     def nuevaVenta():
-
+        global cliente_id_global, ticketGlobal,tiketgenerado
+        cliente_id_global=None
+        ticketGlobal = None
+        tiketgenerado = False;
         for item in tree.get_children():
             tree.delete(item)
 
@@ -176,19 +180,105 @@ def createSellWindow():
         total_var.set(0.0)
         pago_var.set(0.0)
         cambio_var.set(0.0)
+        
 
     def cancelar_ticket():
-        if(tiketgenerado):
-            # Revertir el stock de productos
-            revertir_stock()
+        conn = conectar()
+        cursor = conn.cursor()
+        
+        # Consulta para obtener el rol basado en el usuarioId
+        cursor.execute("SELECT rol FROM usuarios WHERE usuarioId = ?", (userId,))
+        rol_resultado = cursor.fetchone()
+        
+        if rol_resultado is None:
+            messagebox.showerror("Error", "No se encontró el usuario.")
+            conn.close()
+            return
 
-            # Limpiar la tabla de productos (opcional)
+        rol = rol_resultado[0]  # Obtener el rol del usuario
+
+        if rol in ['Admin', 'Gerente']:
+            mostrar_ventas_para_cancelar()  # Función que muestra las ventas para cancelar
+        elif rol == 'Cajero':
+            # Abrir ventana de login para que el Cajero inicie sesión
+            root_login = tk.Tk()
+            root_login.title("Login - Farmacia CUCEI")
+            root_login.geometry("300x200")
+
+            tk.Label(root_login, text="Correo:").pack(pady=10)
+            username_entry = tk.Entry(root_login)
+            username_entry.pack(pady=5)
+
+            tk.Label(root_login, text="Contraseña:").pack(pady=10)
+            password_entry = tk.Entry(root_login, show="*")
+            password_entry.pack(pady=5)
+
+            def realizar_login():
+                correo = username_entry.get()
+                contraseña = password_entry.get()
+                usuario = autenticacion.iniciar_sesion(correo, contraseña)
+
+                if usuario:
+                    user_id = usuario[0]
+                    rol_login = usuario[1]
+                    
+                    if rol_login in ['Admin', 'Gerente']:
+                        messagebox.showinfo("Login Exitoso", f"Bienvenido, {correo}")
+                        root_login.after(100, root_login.destroy)
+                        mostrar_ventas_para_cancelar()  # Función que muestra las ventas para cancelar
+                    else:
+                        messagebox.showerror("Error", "No tiene permiso para cancelar ventas.")
+                else:
+                    messagebox.showerror("Error", "Correo o contraseña incorrectos.")
+
+            tk.Button(root_login, text="Login", width=10, command=realizar_login).pack(pady=20)
+            root_login.mainloop()
+        
+        conn.close()
+
+    def guardar_ventas(clienteId, usuarioId_actual):
+        conn = conectar()
+        cursor = conn.cursor()
+        fecha_actual = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        total = total_var.get()
+        descuento = descuento_var.get()
+
+        try:
+            # Guardar la venta en la tabla 'ventas' y obtener el ventaId generado automáticamente
+            cursor.execute("""
+                INSERT INTO ventas (clienteId, usuarioId, fecha, total, descuento) 
+                VALUES (?, ?, ?, ?, ?)""", 
+                (clienteId, usuarioId_actual, fecha_actual, total, descuento)
+            )
+            ventaId = cursor.lastrowid  # Obtener el ID de la venta recién insertada
+
+            # Guardar los detalles de la venta en la tabla 'detalle_venta', utilizando el mismo ventaId
             for item in tree.get_children():
-                tree.delete(item)
+                item_values = tree.item(item, 'values')
+                productoId = item_values[0]  # Código del producto (ID del producto)
+                cantidad = item_values[3]  # Cantidad
+                subtotal = item_values[4]  # Importe (subtotal)
 
-            messagebox.showinfo("Cancelación", "El ticket ha sido cancelado y el stock revertido.")   
-        else: 
-            messagebox.showinfo("Error", "No hay ticket generado")  
+                cursor.execute("""
+                    INSERT INTO detalle_venta (ventaId, productoId, cantidad, subtotal) 
+                    VALUES (?, ?, ?, ?)""", 
+                    (ventaId, productoId, cantidad, subtotal)
+                )
+
+            # Confirmar la transacción
+            conn.commit()
+            messagebox.showinfo("Venta", f"Venta guardada exitosamente. ID de la venta: {ventaId}")
+
+        except sqlite3.Error as e:
+            conn.rollback()  # Deshacer los cambios en caso de error
+            messagebox.showerror("Error", f"Error al guardar la venta: {e}")
+
+        finally:
+            conn.close()
+            return ventaId
+        
+        
+
     # Obtener lista de clientes para el Combobox
     clientes_dict = obtener_clientes()
     producto_dict = obtenerProducto()
@@ -236,6 +326,116 @@ def createSellWindow():
     totales_frame = tk.Frame(sellWindow)
     totales_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=10)
 
+
+    def mostrar_ventas_para_cancelar():
+        global detalle_tree  
+
+        ventana_cancelar_venta = tk.Toplevel()  # Crear una ventana secundaria
+        ventana_cancelar_venta.title("Cancelar Ventas")
+
+        # Frame para la entrada de búsqueda
+        busqueda_frame = tk.Frame(ventana_cancelar_venta)
+        busqueda_frame.pack(padx=10, pady=10)
+
+        # Etiqueta y entrada para buscar por ID de venta
+        tk.Label(busqueda_frame, text="Ingrese ID de Venta:").grid(row=0, column=0)
+        entrada_venta_id = tk.Entry(busqueda_frame)
+        entrada_venta_id.grid(row=0, column=1)
+
+        # Botón para buscar la venta
+        tk.Button(busqueda_frame, text="Buscar", command=lambda: buscar_venta(entrada_venta_id.get())).grid(row=0, column=2)
+
+        # Frame para la tabla de detalle de ventas
+        detalle_frame = tk.Frame(ventana_cancelar_venta)
+        detalle_frame.pack(padx=10, pady=10)
+
+        # Tabla de detalle de ventas
+        detalle_tree = ttk.Treeview(detalle_frame, columns=("productoId", "descripcion", "precio", "cantidad", "subtotal"), show='headings')
+        detalle_tree.heading("productoId", text="ID Producto")
+        detalle_tree.heading("descripcion", text="Descripción")
+        detalle_tree.heading("precio", text="Precio")
+        detalle_tree.heading("cantidad", text="Cantidad")
+        detalle_tree.heading("subtotal", text="Subtotal")
+        detalle_tree.pack()
+
+
+        # Botón para cancelar la venta (puedes ajustarlo según tus necesidades)
+        tk.Button(ventana_cancelar_venta, text="Cancelar Venta", command=lambda: revertir_stock(entrada_venta_id.get())).pack(pady=10)
+
+    def buscar_venta(ventaId):
+        # Limpiar la tabla antes de llenarla
+        for item in detalle_tree.get_children():
+            detalle_tree.delete(item)
+
+        # Conectar a la base de datos
+        conn = conectar()
+        cursor = conn.cursor()
+
+        # Consultar los detalles de la venta y productos asociados
+        cursor.execute("""
+            SELECT p.productoId, p.descripcion, p.precio, dv.cantidad, dv.subtotal
+            FROM detalle_venta dv
+            JOIN productos p ON dv.productoId = p.productoId
+            WHERE dv.ventaId = ?;
+        """, (ventaId,))
+        
+        productos_venta = cursor.fetchall()  # Obtener todos los detalles de la venta
+
+        # Verificar si se encontraron productos
+        if productos_venta:
+            # Llenar la tabla 'detalle_tree' con los datos recuperados
+            for producto in productos_venta:
+                productoId = producto[0]
+                descripcion = producto[1]
+                precio = producto[2]
+                cantidad = producto[3]
+                subtotal = producto[4]
+
+                # Insertar los datos en el 'treeview'
+                detalle_tree.insert("", "end", values=(productoId, descripcion, precio, cantidad, subtotal))
+        else:
+            messagebox.showinfo("Información", "No se encontraron detalles para el ID de venta ingresado.")
+
+        # Cerrar la conexión a la base de datos
+        conn.close()
+
+
+    def llenar_tabla_detalle_venta(ventaId, tree):
+        # Limpiar la tabla antes de llenarla
+        for item in tree.get_children():
+            tree.delete(item)
+
+        # Conectar a la base de datos
+        conn = conectar()
+        cursor = conn.cursor()
+
+        # Consultar los detalles de la venta y productos asociados
+        cursor.execute("""
+            SELECT p.productoId, p.descripcion, p.precio, dv.cantidad, dv.subtotal
+            FROM detalle_venta dv
+            JOIN productos p ON dv.productoId = p.productoId
+            WHERE dv.ventaId = ?;
+        """, (ventaId,))
+        
+        productos_venta = cursor.fetchall()  # Obtener todos los detalles de la venta
+
+        # Llenar la tabla 'tree' con los datos recuperados
+        for producto in productos_venta:
+            productoId = producto[0]
+            descripcion = producto[1]
+            precio = producto[2]
+            cantidad = producto[3]
+            subtotal = producto[4]
+
+            # Insertar los datos en el 'treeview'
+            tree.insert("", "end", values=(productoId, descripcion, precio, cantidad, subtotal))
+
+        # Cerrar la conexión a la base de datos
+        conn.close()
+
+
+
+
     #Eliminar 
     tk.Button(sellWindow, text="Eliminar Producto", command=eliminar_producto).grid(row=2, column=0, padx=0, pady=0, sticky='w')
     tk.Button(sellWindow, text="Cancelar Ticket", command=cancelar_ticket).grid(row=2, column=1, padx=80, pady=80, sticky='e')
@@ -260,9 +460,12 @@ def createSellWindow():
     # Botón para calcular el cambio
     tk.Button(NuevoFrame, text='Nuevo', command=nuevaVenta).grid(row=5, column=0, sticky='w')
 
+
+
+
     # Crear el botón para cancelar el ticket (inicialmente oculto)
     def calcularCambio():
-        global cliente_id_global
+        global cliente_id_global, ticketGlobal
         if(cliente_id_global!=None):
             # Obtén los valores de total y pago
             total = total_var.get()
@@ -285,8 +488,11 @@ def createSellWindow():
                 facturaFrame = tk.Frame(sellWindow)
                 facturaFrame.grid(row=3, column=0, columnspan=2, padx=15, pady=15)
                 
-                # Botón para calcular el cambio
-                tk.Button(facturaFrame, text='Ticket', command=ticket).grid(row=7, column=0)
+                # Crear el botón y almacenarlo en la variable `ticketGlobal`
+                ticketGlobal = tk.Button(facturaFrame, text='Ticket', command=ticket)
+                # Colocar el botón en la grid
+                ticketGlobal.grid(row=7, column=0)
+
             else:
                 messagebox.showerror("Error", "Pago no es suficiente")
         else:
@@ -319,16 +525,19 @@ def createSellWindow():
 
     def ticket():
         global tiketgenerado
+        conn = conectar()
+        cursor = conn.cursor()
         pdf = FPDF()
         pdf.add_page()
-
+        ventaid=guardar_ventas(cliente_id_global, userId)
         # Encabezado del ticket
         pdf.set_font("Arial", 'B', 16)
         pdf.cell(200, 10, txt="Ticket de Compra", ln=True, align="C")
 
         pdf.set_font("Arial", size=12)
+        pdf.cell(200, 10, txt=f"Folio: {ventaid}", ln=True)
+        pdf.set_font("Arial", size=12)
         pdf.cell(200, 10, txt=f"Cliente ID: {cliente_id_global}", ln=True)
-
         # Agregar productos de la tabla
         pdf.ln(10)
         pdf.set_font("Arial", 'B', 12)
@@ -392,46 +601,77 @@ def createSellWindow():
         cursor.execute("UPDATE clientes SET puntos = puntos + ? WHERE clienteId = ?", (nuevos_puntos, cliente_id_global))
         conn.commit()
         actualizar_stock()
+        ticketGlobal.grid_remove()
+        nuevaVenta()
         tiketgenerado=True
 
-    def revertir_stock():
+    def revertir_stock(ventaId):
         # Conectar a la base de datos
+        print(ventaId)
         conn = conectar()
         cursor = conn.cursor()
 
-        # Recorre cada producto en el ticket
-        for item in tree.get_children():
-            item_values = tree.item(item, 'values')
-            producto_id = item_values[0]  # Suponiendo que el código del producto es el primer valor
-            cantidad_comprada = int(item_values[3])  # La cantidad está en la cuarta posición
+        # Obtener el clienteId de la venta
+        cursor.execute("SELECT clienteId FROM ventas WHERE ventaId = ?;", (ventaId,))
+        resultado = cursor.fetchone()  # Obtener el resultado de la consulta
 
+        if resultado is None:
+            messagebox.showerror("Error", "No se encontró la venta. Verifique el ID de la venta.")
+            conn.close()  # Cerrar la conexión si no se encuentra la venta
+            return  # Salir de la función si la venta no existe
+
+        cliente_id_global = resultado[0]  # Asignar el clienteId encontrado
+
+        # Obtener los productos y cantidades de la venta desde la tabla 'detalle_venta'
+        cursor.execute("""
+            SELECT productoId, cantidad
+            FROM detalle_venta
+            WHERE ventaId = ?;
+        """, (ventaId,))
+        productos_venta = cursor.fetchall()  # Obtener todos los productos de la venta
+
+        # Recorre cada producto y revertir el stock
+        for productoId, cantidad_comprada in productos_venta:
             # Revertir el stock en la base de datos
             cursor.execute("""
                 UPDATE productos
                 SET stock = stock + ?
                 WHERE productoId = ?;
-            """, (cantidad_comprada, producto_id))
+            """, (cantidad_comprada, productoId))
+
+        # Eliminar los detalles de la venta
+        cursor.execute("DELETE FROM detalle_venta WHERE ventaId = ?;", (ventaId,))
+
+        # Eliminar la venta de la tabla 'ventas'
+        cursor.execute("DELETE FROM ventas WHERE ventaId = ?;", (ventaId,))
+
+        # Obtener los puntos del cliente
+        cursor.execute("SELECT puntos FROM clientes WHERE clienteId = ?", (cliente_id_global,))
+        resultado = cursor.fetchone()  # Obtener el resultado de la consulta
+
+        if resultado is not None:
+            puntos_cliente = resultado[0]  # Asignar el valor de puntos
+        else:
+            messagebox.showerror("Error", "No se encontró el cliente. Verifique el ID del cliente.")
+            conn.close()  # Cerrar la conexión si no se encuentra el cliente
+            return  # Salir de la función si el cliente no existe
+
+        # Actualizar los puntos del cliente (basado en el subtotal)
+        subtotal = subtotal_var.get()
+        nuevos_puntos = int(subtotal // 100)  # Supongamos que se ganan 1 punto por cada $100 de compra
+        puntos_cliente -= nuevos_puntos  # Restar los puntos correspondientes
+        cursor.execute("UPDATE clientes SET puntos = ? WHERE clienteId = ?", (puntos_cliente, cliente_id_global))
 
         # Confirmar los cambios y cerrar la conexión
-
-        cursor.execute("SELECT puntos FROM clientes WHERE clienteId = ?", (cliente_id_global,))
-        puntos_cliente = cursor.fetchone()[0]
-        messagebox.showinfo("Ticket generado", f"El ticket ha sido generado y guardado como {pdf_output}")
-        # Actualizar puntos del cliente
-        subtotal=subtotal_var.get()
-        puntos_cliente-=puntos_cliente
-        nuevos_puntos = int(subtotal // 100)  # Supongamos que se ganan 1 punto por cada $100 de compra
-        cursor.execute("UPDATE clientes SET puntos = puntos + ? WHERE clienteId = ?", (puntos_cliente, cliente_id_global))
-
         conn.commit()
         conn.close()
-        messagebox.showinfo("Stock revertido", "El stock ha sido revertido correctamente.")    
-        subtotal_var.set(0.0)  
-        descuento_var.set(0.0)  
-        iva_var.set(0.0)
-        total_var.set(0.0)
-        pago_var.set(0.0)
-        cambio_var.set(0.0)
+
+        # Mostrar mensaje de confirmación
+        messagebox.showinfo("Stock revertido", "El stock ha sido revertido y la venta eliminada correctamente.")
+        nuevaVenta()  # Llamar a la función para crear una nueva venta
+
+
+
 
     def actualizar_totales():
         # Conectar a la base de datos
@@ -451,14 +691,12 @@ def createSellWindow():
         # Obtener puntos del cliente actual
         cursor.execute("SELECT puntos FROM clientes WHERE clienteId = ?", (cliente_id_global,))
         puntos_cliente = cursor.fetchone()[0]
-        print(puntos_cliente," los puntos del cliente fuera")
         # Calcular descuento
         descuento = 0
         if subtotal > 500.00:
             descuento = subtotal * 0.10  # 10% de descuento
 
         if puntos_cliente >= 50:
-            print(puntos_cliente," los puntos del cliente")
             descuento = subtotal * 0.50  # 50% de descuento
 
         # Calcular el total (subtotal + IVA - descuento)
@@ -490,5 +728,3 @@ def createSellWindow():
             messagebox.showerror("Error", "Introduce un pago válido.")
 
     sellWindow.mainloop()
-
-createSellWindow()

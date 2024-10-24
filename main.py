@@ -8,7 +8,7 @@ from Productos import createProductWindow
 from Ventas import createSellWindow
 from Alamcen import mostrar_inventario
 
-def abrir_menu_principal(rol):
+def abrir_menu_principal(user_id,rol):
     menu = tk.Tk()
     menu.title("Menú Principal - Farmacia CUCEI")
     menu.geometry("400x300")
@@ -20,28 +20,28 @@ def abrir_menu_principal(rol):
         tk.Button(menu, text="Productos", width=20, command=createProductWindow).pack(pady=5)
         tk.Button(menu, text="Almacen", width=20, command=mostrar_inventario).pack(pady=5)
         tk.Button(menu, text="Compras", width=20, command = createProductWindow).pack(pady=5)
-        tk.Button(menu, text="Ventas", width=20, command = createSellWindow).pack(pady=5)
+        tk.Button(menu, text="Ventas", width=20, command=lambda: createSellWindow(user_id)).pack(pady=5)
         tk.Button(menu, text="Clientes", width=20, command = createClientWindow).pack(pady=5)
         tk.Button(menu, text="Usuarios", width=20, command = createUserWindow).pack(pady=5)
     elif rol == 'Gerente':
-        tk.Button(menu, text="Ventas", width=20, command = createSellWindow).pack(pady=5)
+        tk.Button(menu, text="Ventas", width=20, ccommand=lambda: createSellWindow(user_id)).pack(pady=5)
         tk.Button(menu, text="Clientes", width=20, command = createClientWindow).pack(pady=5)
     elif rol == 'Cajero':
-        tk.Button(menu, text="Ventas", width=20, command = createSellWindow).pack(pady=5)
+        tk.Button(menu, text="Ventas", width=20, command=lambda: createSellWindow(user_id)).pack(pady=5)
 
     menu.mainloop()
 
 def login():
-    # Obtenemos los valores ANTES de destruir la ventana
     correo = username_entry.get()
     contraseña = password_entry.get()
-
     usuario = autenticacion.iniciar_sesion(correo, contraseña)
-
     if usuario:
+        user_id = usuario[0]  
+        rol = usuario[1]      
+
         messagebox.showinfo("Login Exitoso", f"Bienvenido, {correo}")
-        root.after(100, root.destroy)  # Usa after para evitar problemas de sincronización
-        abrir_menu_principal(usuario[1])  # Pasa el rol del usuario para abrir el menú correspondiente
+        root.after(100, root.destroy)  
+        abrir_menu_principal(user_id, rol) 
     else:
         messagebox.showerror("Error", "Correo o contraseña incorrectos")
 
