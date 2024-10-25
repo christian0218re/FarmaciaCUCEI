@@ -239,5 +239,3 @@ def createUserWindow():
     tk.Button(userWindow, text='Exit', width=20, command=userWindow.destroy).grid(row=13, column=1)
 
     userWindow.mainloop()
-
-createUserWindow()
