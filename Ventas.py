@@ -24,13 +24,19 @@ def createSellWindow(userId):
         conn = conectar()
         cursor = conn.cursor()
         productoId = producto_dict[productolist]
-        cantidad_a_agregar = 1  # Siempre agregamos de uno en uno
+
+        # Obtener la cantidad ingresada, o asignar 1 si está vacío
+        try:
+            cantidad_a_agregar = int(cantidad_entry.get()) if cantidad_entry.get() else 1
+        except ValueError:
+            messagebox.showerror("Error", "Por favor ingrese un número válido en el campo de cantidad.")
+            return
 
         # Obtener los datos del producto
         cursor.execute("SELECT * FROM productos WHERE productoId = ?", (productoId,))
         producto = cursor.fetchone()
 
-        if producto and cliente_id_global!=None:
+        if producto and cliente_id_global is not None:
             productoId = producto[0]
             nombreProducto = producto[1]
             descripcionProducto = producto[2]
@@ -66,9 +72,12 @@ def createSellWindow(userId):
             actualizar_totales()  # Actualizar totales
 
         else:
-             messagebox.showerror("Error", "Necesita un cliente")
-             if producto == False:
+            messagebox.showerror("Error", "Necesita un cliente")
+            if producto is None:
                 messagebox.showerror("Error", "Producto no encontrado en la base de datos.")
+
+        # Limpiar campo de cantidad después de agregar
+        cantidad_entry.delete(0, tk.END)
 
         conn.close()
 
@@ -88,11 +97,11 @@ def createSellWindow(userId):
 
 
     def seleccionarProducto(event):
-        if listboxPoducto.curselection():  # Si hay una selección
+        if listboxPoducto.curselection():  
             seleccionado = listboxPoducto.get(listboxPoducto.curselection())
             agregar_producto(seleccionado)
-            producto_search_entry.delete(0, tk.END)  # Limpiar el entry
-            listboxPoducto.delete(0, tk.END)  # Limpiar el listbox
+            producto_search_entry.delete(0, tk.END) 
+            listboxPoducto.delete(0, tk.END)  
 
 
     # Función para llenar los datos del cliente y guardar el ID en la variable global
@@ -291,11 +300,21 @@ def createSellWindow(userId):
     producto_search_entry = tk.Entry(productos_frame)
     producto_search_entry.grid(row=0, column=1, padx=5, pady=5)
     producto_search_entry.bind("<KeyRelease>", buscarProducto)  # Evento para buscar clientes al escribir
+    # Etiqueta para cantidad
+    cantidad_label = tk.Label(productos_frame, text="Cantidad:")
+    cantidad_label.grid(row=0, column=2, padx=5, pady=5, sticky="e")
 
-    # Listbox para mostrar coincidencias de producto
-    listboxPoducto = tk.Listbox(productos_frame, height=6)  # Ajustar altura para una mejor visualización
-    listboxPoducto.grid(row=1, column=0, columnspan=2, padx=5, pady=5)
-    listboxPoducto.bind("<Double-Button-1>", seleccionarProducto)  # Seleccionar cliente al hacer doble clic
+    # Entry para cantidad
+    cantidad_entry = tk.Entry(productos_frame, width=5)
+    cantidad_entry.grid(row=0, column=3, padx=5, pady=5)
+
+    # Listbox para productos
+    listboxPoducto = tk.Listbox(productos_frame, height=6, width=40)
+    listboxPoducto.grid(row=1, column=0, columnspan=4, padx=5, pady=5, sticky="w")
+
+    # Conectar el evento de selección del producto
+    listboxPoducto.bind("<Double-Button-1>", seleccionarProducto)
+
 
     # Frame para clientes
     clientes_frame = tk.Frame(sellWindow)
@@ -728,3 +747,5 @@ def createSellWindow(userId):
             messagebox.showerror("Error", "Introduce un pago válido.")
 
     sellWindow.mainloop()
+
+createSellWindow(1)
