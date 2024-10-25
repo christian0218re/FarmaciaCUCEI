@@ -1,8 +1,9 @@
 # Usuarios.py
 from baseDatos import conectar
 import tkinter as tk
+import tkinter as ttk
 import re
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 
 def createUserWindow():
     def crear_usuario():
@@ -16,7 +17,7 @@ def createUserWindow():
         direccion = direccionEntry.get()
         telefono = phoneEntry.get()
         contraseña = pwdEntry.get()
-        rol = rolEntry.get()
+        rol = rolCombo.get()
 
         # Expresión regular para validar correos
         email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
@@ -155,7 +156,7 @@ def createUserWindow():
         idEntry.delete(0, tk.END)
         nameEntry.delete(0, tk.END)
         emailEntry.delete(0, tk.END)
-        rolEntry.delete(0, tk.END)
+        rolCombo.set('')
         phoneEntry.delete(0, tk.END)
         pwdEntry.delete(0, tk.END)
         direccionEntry.delete(0, tk.END)
@@ -188,8 +189,9 @@ def createUserWindow():
     emailEntry.grid(row=3, column=1)
     pwdEntry = tk.Entry(userWindow, show='*')
     pwdEntry.grid(row=4, column=1)
-    rolEntry = tk.Entry(userWindow)
-    rolEntry.grid(row=5, column=1)
+    roles = ['Admin', 'Gerente', 'Cajero']
+    rolCombo = ttk.Combobox(userWindow, values=roles, state='readonly')  # state='readonly' para que solo se puedan seleccionar las opciones
+    rolCombo.grid(row=5, column=1)
     direccionEntry = tk.Entry(userWindow)
     direccionEntry.grid(row=6, column=1)
     phoneEntry = tk.Entry(userWindow)
@@ -203,3 +205,4 @@ def createUserWindow():
     tk.Button(userWindow, text='Cancel', width = 20, command = cleanUserWindow).grid(row=12, column=1)
     tk.Button(userWindow, text='Exit', width = 20, command = userWindow.destroy).grid(row=13, column=1)
 
+    userWindow.mainloop()

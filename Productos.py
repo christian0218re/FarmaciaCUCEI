@@ -17,7 +17,6 @@ def createProductWindow():
         precio = precioEntry.get()
         stock = stockEntry.get()
 
-        # Obtener el proveedor seleccionado del combobox
         proveedor_nombre = proveedorCombo.get()
         proveedorId = proveedores_dict.get(proveedor_nombre)
 
@@ -240,5 +239,3 @@ def createProductWindow():
 
     product_window.mainloop()
 
-
-createProductWindow()

@@ -6,6 +6,7 @@ from Clientes import createClientWindow
 from Usuarios import createUserWindow
 from Productos import createProductWindow
 from Ventas import createSellWindow
+from Compras import createBuyWindow
 from Alamcen import mostrar_inventario
 
 def abrir_menu_principal(user_id,rol):
@@ -19,7 +20,7 @@ def abrir_menu_principal(user_id,rol):
         tk.Button(menu, text="Provedor", width=20, command=createProviderWindow).pack(pady=5)
         tk.Button(menu, text="Productos", width=20, command=createProductWindow).pack(pady=5)
         tk.Button(menu, text="Almacen", width=20, command=mostrar_inventario).pack(pady=5)
-        tk.Button(menu, text="Compras", width=20, command = createProductWindow).pack(pady=5)
+        tk.Button(menu, text="Compras", width=20, command = createBuyWindow).pack(pady=5)
         tk.Button(menu, text="Ventas", width=20, command=lambda: createSellWindow(user_id)).pack(pady=5)
         tk.Button(menu, text="Clientes", width=20, command = createClientWindow).pack(pady=5)
         tk.Button(menu, text="Usuarios", width=20, command = createUserWindow).pack(pady=5)

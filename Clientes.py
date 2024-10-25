@@ -32,6 +32,10 @@ def createClientWindow():
         if not telefono.isdigit() or len(telefono) != 10:
             messagebox.showinfo("Error", "El número de teléfono debe contener 10 dígitos numéricos")
             return
+        
+        if not telefono.isdigit() or len(telefono) != 13:
+            messagebox.showinfo("Error", "El RFC debe contener 13 dígitos numéricos")
+            return
 
         try:
             # Verificar que el ID no esté en uso
@@ -86,19 +90,19 @@ def createClientWindow():
             if cliente:
                 # Llenar los campos del formulario con los datos del cliente
                 idEntry.delete(0, tk.END)
-                idEntry.insert(0, cliente[1])
+                idEntry.insert(0, cliente[0])
 
                 nameEntry.delete(0, tk.END)
-                nameEntry.insert(0, cliente[2])
+                nameEntry.insert(0, cliente[1])
 
                 correoEntry.delete(0, tk.END)
-                correoEntry.insert(0, cliente[3])
+                correoEntry.insert(0, cliente[2])
 
                 directionEntry.delete(0, tk.END)
-                directionEntry.insert(0, cliente[4])
+                directionEntry.insert(0, cliente[3])
 
                 phoneEntry.delete(0, tk.END)
-                phoneEntry.insert(0, cliente[5])
+                phoneEntry.insert(0, cliente[4])
 
                 rfcEntry.delete(0, tk.END)
                 rfcEntry.insert(0, cliente[6])

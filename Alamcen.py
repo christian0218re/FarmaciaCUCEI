@@ -112,5 +112,3 @@ def mostrar_inventario():
     tk.Button(inventario_window, text="Salir", command=inventario_window.destroy).pack(pady=5)
 
     inventario_window.mainloop()
-
-mostrar_inventario()
