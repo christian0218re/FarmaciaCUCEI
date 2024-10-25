@@ -2,7 +2,7 @@
 from baseDatos import conectar
 import tkinter as tk
 import re
-from tkinter import messagebox
+from tkinter import ttk,messagebox
 
 
 def createUserWindow():
@@ -108,10 +108,9 @@ def createUserWindow():
         try:
             cursor.execute("""
                 UPDATE usuarios
-                SET nombre = ?, correo = ?, contraseña = ?,rol = ?, direccion = ?, telefono = ?
-
-                WHERE clienteId = ?
-            """, (nombre, correo, direccion, contraseña, rol, direccion, telefono))
+                SET nombre = ?, correo = ?, contraseña = ?, rol = ?, direccion = ?, telefono = ?
+                WHERE usuarioId = ?
+            """, (nombre, correo, contraseña, rol, direccion, telefono, usuarioId))
             conn.commit()
 
             messagebox.showinfo("Éxito", "Usuario actualizado correctamente")
@@ -127,10 +126,10 @@ def createUserWindow():
         usuarioId = idEntry.get()
 
         try:
-            cursor.execute("DELETE FROM usuarios WHERE usuariosId = ?", (usuarioId))
+            cursor.execute("DELETE FROM usuarios WHERE usuarioId = ?", (usuarioId))
             conn.commit()
 
-            messagebox.showinfo("Éxito", "Cliente eliminado correctamente")
+            messagebox.showinfo("Éxito", "Usuario eliminado correctamente")
             cleanUserWindow();
         except Exception as e:
             messagebox.showinfo("Error", str(e))
@@ -156,7 +155,7 @@ def createUserWindow():
         idEntry.delete(0, tk.END)
         nameEntry.delete(0, tk.END)
         emailEntry.delete(0, tk.END)
-        rolEntry.delete(0, tk.END)
+        rolEntry.set('')
         phoneEntry.delete(0, tk.END)
         pwdEntry.delete(0, tk.END)
         direccionEntry.delete(0, tk.END)
@@ -183,7 +182,7 @@ def createUserWindow():
             emailEntry.insert(0, usuario[2])  # Correo
             pwdEntry.delete(0, tk.END)
             pwdEntry.insert(0, usuario[3])  # Contraseña
-            rolEntry.delete(0, tk.END)
+            rolEntry.set('')
             rolEntry.insert(0, usuario[4])  # Rol
             direccionEntry.delete(0, tk.END)
             direccionEntry.insert(0, usuario[5])  # Dirección
@@ -222,7 +221,9 @@ def createUserWindow():
     emailEntry.grid(row=3, column=1)
     pwdEntry = tk.Entry(userWindow, show='*')
     pwdEntry.grid(row=4, column=1)
-    rolEntry = tk.Entry(userWindow)
+    roles = ['Admin', 'Gerente', 'Cajero']
+    # Crear un Combobox con las opciones de roles
+    rolEntry = ttk.Combobox(userWindow, values=roles, state='readonly')  # state='readonly' para que solo se puedan seleccionar las opciones
     rolEntry.grid(row=5, column=1)
     direccionEntry = tk.Entry(userWindow)
     direccionEntry.grid(row=6, column=1)
@@ -238,3 +239,5 @@ def createUserWindow():
     tk.Button(userWindow, text='Exit', width=20, command=userWindow.destroy).grid(row=13, column=1)
 
     userWindow.mainloop()
+
+createUserWindow()
