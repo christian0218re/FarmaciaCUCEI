@@ -1,9 +1,9 @@
 # Usuarios.py
 from baseDatos import conectar
 import tkinter as tk
-import tkinter as ttk
 import re
-from tkinter import ttk, messagebox
+from tkinter import messagebox
+
 
 def createUserWindow():
     def crear_usuario():
@@ -17,7 +17,7 @@ def createUserWindow():
         direccion = direccionEntry.get()
         telefono = phoneEntry.get()
         contraseña = pwdEntry.get()
-        rol = rolCombo.get()
+        rol = rolEntry.get()
 
         # Expresión regular para validar correos
         email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
@@ -80,7 +80,7 @@ def createUserWindow():
         correo = emailEntry.get()
         direccion = direccionEntry.get()
         telefono = phoneEntry.get()
-        rol =  rolEntry.get()
+        rol = rolEntry.get()
         contraseña = pwdEntry.get()
 
         # Validar que todos los campos estén llenos
@@ -109,7 +109,7 @@ def createUserWindow():
             cursor.execute("""
                 UPDATE usuarios
                 SET nombre = ?, correo = ?, contraseña = ?,rol = ?, direccion = ?, telefono = ?
-                
+
                 WHERE clienteId = ?
             """, (nombre, correo, direccion, contraseña, rol, direccion, telefono))
             conn.commit()
@@ -124,7 +124,7 @@ def createUserWindow():
     def eliminarUsuarios():
         conn = conectar()
         cursor = conn.cursor()
-        usuarioId=idEntry.get()
+        usuarioId = idEntry.get()
 
         try:
             cursor.execute("DELETE FROM usuarios WHERE usuariosId = ?", (usuarioId))
@@ -156,10 +156,43 @@ def createUserWindow():
         idEntry.delete(0, tk.END)
         nameEntry.delete(0, tk.END)
         emailEntry.delete(0, tk.END)
-        rolCombo.set('')
+        rolEntry.delete(0, tk.END)
         phoneEntry.delete(0, tk.END)
         pwdEntry.delete(0, tk.END)
         direccionEntry.delete(0, tk.END)
+
+    def searchUser():
+        usuarioId = searchIdEntry.get()  # Obtener el ID del campo de búsqueda
+        if not usuarioId:
+            messagebox.showinfo("Error", "Por favor ingrese un ID para buscar")
+            return
+
+        conn = conectar()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM usuarios WHERE usuarioId = ?", (usuarioId,))
+        usuario = cursor.fetchone()
+        conn.close()
+
+        if usuario:
+            # Llenar los campos de entrada con los datos del usuario encontrado
+            idEntry.delete(0, tk.END)
+            idEntry.insert(0, usuario[0])  # ID
+            nameEntry.delete(0, tk.END)
+            nameEntry.insert(0, usuario[1])  # Nombre
+            emailEntry.delete(0, tk.END)
+            emailEntry.insert(0, usuario[2])  # Correo
+            pwdEntry.delete(0, tk.END)
+            pwdEntry.insert(0, usuario[3])  # Contraseña
+            rolEntry.delete(0, tk.END)
+            rolEntry.insert(0, usuario[4])  # Rol
+            direccionEntry.delete(0, tk.END)
+            direccionEntry.insert(0, usuario[5])  # Dirección
+            phoneEntry.delete(0, tk.END)
+            phoneEntry.insert(0, usuario[6])  # Teléfono
+        else:
+            messagebox.showinfo("Error", "Usuario no encontrado")
+
+
 
     userWindow = tk.Tk()
     userWindow.title('Usuarios')
@@ -169,7 +202,7 @@ def createUserWindow():
     tk.Label(userWindow, text='Ingrese el ID a buscar').grid(row=0, column=0)
     searchIdEntry = tk.Entry(userWindow)
     searchIdEntry.grid(row=0, column=1)
-    tk.Button(userWindow, text='Buscar').grid(row=0, column=2)
+    tk.Button(userWindow, text='Buscar', command= searchUser).grid(row=0, column=2)
 
     # Labels for the User GUI
     tk.Label(userWindow, text='ID').grid(row=1, column=0)
@@ -189,9 +222,8 @@ def createUserWindow():
     emailEntry.grid(row=3, column=1)
     pwdEntry = tk.Entry(userWindow, show='*')
     pwdEntry.grid(row=4, column=1)
-    roles = ['Admin', 'Gerente', 'Cajero']
-    rolCombo = ttk.Combobox(userWindow, values=roles, state='readonly')  # state='readonly' para que solo se puedan seleccionar las opciones
-    rolCombo.grid(row=5, column=1)
+    rolEntry = tk.Entry(userWindow)
+    rolEntry.grid(row=5, column=1)
     direccionEntry = tk.Entry(userWindow)
     direccionEntry.grid(row=6, column=1)
     phoneEntry = tk.Entry(userWindow)
@@ -199,10 +231,10 @@ def createUserWindow():
 
     # Info buttons
     tk.Button(userWindow, text='New', width=20, command=getCurrentID).grid(row=8, column=1)
-    tk.Button(userWindow, text='Edit', width = 20, command = actualizar_cliente).grid(row=9, column=1)
-    tk.Button(userWindow, text='Save', width = 20, command=crear_usuario).grid(row=10, column=1)
-    tk.Button(userWindow, text='Delete', width = 20, command = eliminarUsuarios).grid(row=11, column=1)
-    tk.Button(userWindow, text='Cancel', width = 20, command = cleanUserWindow).grid(row=12, column=1)
-    tk.Button(userWindow, text='Exit', width = 20, command = userWindow.destroy).grid(row=13, column=1)
+    tk.Button(userWindow, text='Edit', width=20, command=actualizar_cliente).grid(row=9, column=1)
+    tk.Button(userWindow, text='Save', width=20, command=crear_usuario).grid(row=10, column=1)
+    tk.Button(userWindow, text='Delete', width=20, command=eliminarUsuarios).grid(row=11, column=1)
+    tk.Button(userWindow, text='Cancel', width=20, command=cleanUserWindow).grid(row=12, column=1)
+    tk.Button(userWindow, text='Exit', width=20, command=userWindow.destroy).grid(row=13, column=1)
 
     userWindow.mainloop()
