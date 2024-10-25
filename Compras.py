@@ -138,7 +138,7 @@ def createBuyWindow():
         else:
             messagebox.showwarning("Advertencia", "No hay ningún producto seleccionado.")
 
-    def nuevaCompra():
+    def cleanWindow():
         nonlocal carrito_proveedorId
         carrito_proveedorId = None  # Reiniciar el proveedor del carrito
         for item in tree.get_children():
@@ -194,7 +194,7 @@ def createBuyWindow():
         messagebox.showinfo("Compra", f"Compra guardada exitosamente. ID de compra: {compraId}")
         searchEntry.delete(0, tk.END)
         searchEntry.insert(0, str(compraId))  # Display the compraId in the search entry
-        nuevaCompra()  # Reiniciar la compra después de guardar
+        cleanWindow()  # Reiniciar la compra después de guardar
 
     def buscarCompra():
         compra_id = searchEntry.get()
@@ -218,7 +218,7 @@ def createBuyWindow():
         conn.close()
 
         if compra:
-            nuevaCompra()  # Limpiar el carrito actual
+            cleanWindow()  # Limpiar el carrito actual
             for detalle in compra:
                 tree.insert("", "end", values=(detalle[0], detalle[1], "", detalle[2], detalle[3]))
             update_totals()
@@ -270,7 +270,42 @@ def createBuyWindow():
 
         messagebox.showinfo("Compra Cancelada",
                             f"La compra con ID {compra_id} ha sido cancelada y el stock ha sido actualizado.")
-        nuevaCompra()  # Limpiar el carrito actual
+        cleanWindow()  # Limpiar el carrito actual
+
+    def guardar_compra():
+        if not procesar_pago():
+            return
+
+        conn = conectar()
+        cursor = conn.cursor()
+        fecha_actual = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        total = float(total_var.get())
+
+        # Guardar la compra en la base de datos
+        cursor.execute("INSERT INTO compras (usuarioId, fecha, total) VALUES (?, ?, ?)",
+                       (usuarioId_actual, fecha_actual, total))
+        compraId = cursor.lastrowid  # Obtener el ID de la compra recién insertada
+
+        # Guardar los detalles de la compra en la tabla detalle_compra y actualizar el stock
+        for item in tree.get_children():
+            item_values = tree.item(item, 'values')
+            productoId = item_values[0]
+            cantidad = item_values[3]
+            subtotal = item_values[4]
+
+            # Actualizar el stock en la base de datos
+            cursor.execute("UPDATE productos SET stock = stock - ? WHERE productoId = ?", (cantidad, productoId))
+
+            # Guardar el detalle de la compra
+            cursor.execute("INSERT INTO detalle_compra (compraId, productoId, cantidad, subtotal) VALUES (?, ?, ?, ?)",
+                           (compraId, productoId, cantidad, subtotal))
+
+        conn.commit()
+        conn.close()
+        messagebox.showinfo("Compra", f"Compra guardada exitosamente. ID de compra: {compraId}")
+        searchEntry.delete(0, tk.END)
+        searchEntry.insert(0, str(compraId))  # Display the compraId in the search entry
+        cleanWindow()  # Reiniciar la compra después de guardar
 
     proveedor_dict = obtenerProveedores()
     producto_dict = {}
@@ -313,6 +348,7 @@ def createBuyWindow():
     tk.Button(button_frame, text='Eliminar Producto', command=eliminar_producto).grid(row=0, column=0, padx=5, pady=5)
     tk.Button(button_frame, text='Guardar Compra', command=guardar_compra).grid(row=0, column=1, padx=5, pady=5)
     tk.Button(button_frame, text='Cancelar Compra', command=cancelar_compra).grid(row=0, column=2, padx=5, pady=5)
+    tk.Button(button_frame, text='Cancelar', command=cleanWindow).grid(row=0, column=3, padx=5, pady=5)
 
     # Etiquetas para Totales
     tk.Label(buyWindow, text="Subtotal:").grid(row=3, column=0, padx=10, pady=5, sticky='e')
